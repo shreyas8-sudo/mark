@@ -31,6 +31,8 @@
   inset: 0;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  /* minmax(0) so a long bar-chip row scrolls instead of widening the page */
+  grid-template-columns: minmax(0, 1fr);
   padding:
     max(env(safe-area-inset-top), var(--mk-space-4))
     max(env(safe-area-inset-right), var(--mk-space-6) - 4px)
@@ -93,6 +95,7 @@
 }
 
 .bars__row {
+  min-width: 0;
   display: flex;
   gap: 6px;
   overflow-x: auto;
