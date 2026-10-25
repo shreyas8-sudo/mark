@@ -7,12 +7,11 @@ import './Library.css'
 // The full 01 Library design (grid, thumbnails, ⋯ menu) lands in Phase 5.
 type Props = {
   dances: Dance[]
-  busy: string | null
   onOpen: (id: string) => void
   onAdd: (file: File) => void
 }
 
-export function Library({ dances, busy, onOpen, onAdd }: Props) {
+export function Library({ dances, onOpen, onAdd }: Props) {
   const input = useRef<HTMLInputElement>(null)
 
   return (
@@ -26,7 +25,6 @@ export function Library({ dances, busy, onOpen, onAdd }: Props) {
           type="button"
           className="library__add mk-glass"
           aria-label="Add a dance"
-          disabled={!!busy}
           onClick={() => input.current?.click()}
         >
           <Icon name="add" size={22} />
@@ -44,7 +42,7 @@ export function Library({ dances, busy, onOpen, onAdd }: Props) {
         />
       </header>
       <p className="library__meta mk-label-mono">
-        {busy ? `Finding the beat in ${busy}…` : 'Saved on this device'}
+        Saved on this device
       </p>
 
       <ul className="library__list">

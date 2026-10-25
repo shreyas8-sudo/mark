@@ -1,0 +1,113 @@
+.setup {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--mk-bg-base);
+  color: var(--mk-text-primary);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.setup__area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+
+.setup__area:active {
+  cursor: grabbing;
+}
+
+.setup__video {
+  position: absolute;
+  max-width: none;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+/* The box punches a hole in the scrim with a huge spread shadow. */
+.setup__box {
+  position: absolute;
+  border: 1.5px solid var(--mk-text-primary);
+  box-shadow: 0 0 0 100vmax var(--mk-overlay-scrim-strong);
+  pointer-events: none;
+}
+
+.setup__corner {
+  position: absolute;
+}
+
+.setup__corner--tl { left: -4px; top: -4px; }
+.setup__corner--tr { right: -4px; top: -4px; }
+.setup__corner--br { right: -4px; bottom: -4px; }
+.setup__corner--bl { left: -4px; bottom: -4px; }
+
+.setup__top {
+  position: absolute;
+  top: max(env(safe-area-inset-top), var(--mk-space-4));
+  inset-inline: 20px;
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  pointer-events: none;
+}
+
+.setup__top > * {
+  pointer-events: auto;
+}
+
+.setup__top .mk-body-strong {
+  flex: 1;
+}
+
+.setup__hint {
+  color: var(--mk-text-secondary);
+}
+
+.setup__sheet {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: calc(-1 * var(--mk-radius-xl));
+  padding: 22px 20px max(env(safe-area-inset-bottom), 36px);
+  border-radius: var(--mk-radius-xl) var(--mk-radius-xl) 0 0;
+  background: var(--mk-bg-surface);
+}
+
+.setup__sheet > * {
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+}
+
+.setup__sheet h1,
+.setup__sheet p {
+  margin: 0;
+}
+
+.setup__sheet p {
+  color: var(--mk-text-secondary);
+}
+
+.setup__row {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+}
+
+.setup__row .mk-body-strong {
+  flex: 1;
+}
+
+.setup__actions {
+  display: grid;
+  grid-template-columns: 145fr 193fr;
+  gap: 10px;
+}

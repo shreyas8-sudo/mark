@@ -17,10 +17,11 @@ type Props = {
   dance: Dance
   src: string
   onBack: () => void
+  onEditFrame: () => void
   onChange: (patch: Partial<Dance>) => void
 }
 
-export function Learn({ dance, src, onBack, onChange }: Props) {
+export function Learn({ dance, src, onBack, onEditFrame, onChange }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const grid: Grid = useMemo(() => ({ bpm: dance.bpm, offset: dance.offset }), [dance.bpm, dance.offset])
   const [duration, setDuration] = useState(dance.duration)
@@ -113,7 +114,7 @@ export function Learn({ dance, src, onBack, onChange }: Props) {
             />
             <RailButton icon="mirror" label="Mirror" on={dance.mirror} onClick={() => onChange({ mirror: !dance.mirror })} />
             <RailButton icon="loop" label="Loop" on={loopBar != null} onClick={toggleLoop} />
-            <RailButton icon="frame" label="Frame" disabled title="Edit frame comes with setup" />
+            <RailButton icon="frame" label="Frame" onClick={onEditFrame} />
           </nav>
         </div>
 

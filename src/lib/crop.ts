@@ -22,3 +22,48 @@ export function videoBox(stage: Size, video: Size, crop: Crop, mirror: boolean):
 
   return { left: stage.w / 2 - cx, top: stage.h / 2 - cy, width, height }
 }
+
+// ---- Framing: how Setup · Frame edits a crop ----
+// The crop box on screen has a fixed aspect (vertical 9:16 / horizontal
+// 16:9). The user zooms (z ≥ 1, 1 = largest box that fits the video) and
+// pans the centre (cx, cy in normalised source coordinates).
+
+export type Framing = { z: number; cx: number; cy: number }
+
+export const MAX_ZOOM = 6
+export const ASPECT = { vertical: 9 / 16, horizontal: 16 / 9 } as const
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
+
+/** Normalised size of the crop at zoom 1: the largest `aspect` rect in the video. */
+function baseSize(video: Size, aspect: number) {
+  const fitsHeight = video.w / video.h > aspect
+  const w = fitsHeight ? (video.h * aspect) / video.w : 1
+  const h = fitsHeight ? 1 : video.w / aspect / video.h
+  return { w, h }
+}
+
+export function cropFromFraming(video: Size, aspect: number, f: Framing): Crop {
+  const base = baseSize(video, aspect)
+  const z = clamp(f.z, 1, MAX_ZOOM)
+  const w = base.w / z
+  const h = base.h / z
+  return {
+    x: clamp(f.cx - w / 2, 0, 1 - w),
+    y: clamp(f.cy - h / 2, 0, 1 - h),
+    w,
+    h,
+  }
+}
+
+export function framingFromCrop(video: Size, aspect: number, crop: Crop): Framing {
+  const base = baseSize(video, aspect)
+  const z = clamp(base.w / crop.w, 1, MAX_ZOOM)
+  return normalise(video, aspect, { z, cx: crop.x + crop.w / 2, cy: crop.y + crop.h / 2 })
+}
+
+/** Clamp zoom and pull the centre back so the crop stays inside the video. */
+export function normalise(video: Size, aspect: number, f: Framing): Framing {
+  const c = cropFromFraming(video, aspect, f)
+  return { z: clamp(f.z, 1, MAX_ZOOM), cx: c.x + c.w / 2, cy: c.y + c.h / 2 }
+}

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { FULL_FRAME, videoBox } from './crop'
+import {
+  ASPECT,
+  cropFromFraming,
+  framingFromCrop,
+  FULL_FRAME,
+  normalise,
+  videoBox,
+} from './crop'
 
 const phone = { w: 390, h: 844 }
 
@@ -25,5 +32,42 @@ describe('videoBox', () => {
     const box = videoBox({ w: 100, h: 200 }, { w: 100, h: 100 }, crop, true)
     // source right half shows on the left once flipped
     expect(box.left).toBeCloseTo(0)
+  })
+})
+
+describe('framing', () => {
+  const portrait = { w: 540, h: 1172 } // the demo clip
+  const landscape = { w: 1920, h: 1080 }
+
+  it('at zoom 1 takes the largest box of the chosen aspect', () => {
+    const c = cropFromFraming(landscape, ASPECT.vertical, { z: 1, cx: 0.5, cy: 0.5 })
+    expect(c.h).toBe(1)
+    expect((c.w * landscape.w) / (c.h * landscape.h)).toBeCloseTo(9 / 16)
+    expect(c.x + c.w / 2).toBeCloseTo(0.5)
+  })
+
+  it('zooming shrinks the crop around the centre', () => {
+    const c = cropFromFraming(portrait, ASPECT.vertical, { z: 2, cx: 0.5, cy: 0.5 })
+    const c1 = cropFromFraming(portrait, ASPECT.vertical, { z: 1, cx: 0.5, cy: 0.5 })
+    expect(c.w).toBeCloseTo(c1.w / 2)
+    expect(c.x + c.w / 2).toBeCloseTo(0.5)
+  })
+
+  it('keeps the crop inside the video when panned past the edge', () => {
+    const c = cropFromFraming(landscape, ASPECT.vertical, { z: 1, cx: 0.99, cy: 0.5 })
+    expect(c.x + c.w).toBeCloseTo(1)
+    expect(normalise(landscape, ASPECT.vertical, { z: 1, cx: 0.99, cy: 0.5 }).cx).toBeCloseTo(1 - c.w / 2)
+  })
+
+  it('round-trips a crop back to the same framing', () => {
+    const f = { z: 2.5, cx: 0.4, cy: 0.6 }
+    const back = framingFromCrop(portrait, ASPECT.vertical, cropFromFraming(portrait, ASPECT.vertical, f))
+    expect(back.z).toBeCloseTo(f.z)
+    expect(back.cx).toBeCloseTo(f.cx)
+    expect(back.cy).toBeCloseTo(f.cy)
+  })
+
+  it('treats the full frame as zoom 1', () => {
+    expect(framingFromCrop(portrait, ASPECT.vertical, FULL_FRAME).z).toBe(1)
   })
 })

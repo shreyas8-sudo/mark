@@ -103,3 +103,55 @@ export function ModeCarousel({
     </div>
   )
 }
+
+export function Button({
+  variant = 'primary',
+  className = '',
+  ...rest
+}: { variant?: 'primary' | 'secondary' } & ButtonProps) {
+  return <button type="button" className={`mk-button mk-button--${variant} mk-body-strong ${className}`} {...rest} />
+}
+
+export function Toggle({ on, label, onChange }: { on: boolean; label: string; onChange: (on: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      className="mk-toggle"
+      onClick={() => onChange(!on)}
+    >
+      <span className="mk-toggle__knob" />
+    </button>
+  )
+}
+
+export function Segmented<T extends string>({
+  value,
+  options,
+  label,
+  onChange,
+}: {
+  value: T
+  options: { value: T; label: string }[]
+  label: string
+  onChange: (v: T) => void
+}) {
+  return (
+    <div className="mk-segmented" role="radiogroup" aria-label={label}>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="radio"
+          aria-checked={value === o.value}
+          className="mk-segmented__option mk-body-strong"
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}

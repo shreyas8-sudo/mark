@@ -147,3 +147,85 @@ button:focus-visible {
   max-width: none;
   object-fit: fill;
 }
+
+/* ---- Button ---- */
+.mk-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mk-space-3) var(--mk-space-6);
+  border-radius: var(--mk-radius-md);
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.mk-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.mk-button:disabled {
+  opacity: 0.4;
+}
+
+.mk-button--primary {
+  background: var(--mk-accent-primary);
+  color: var(--mk-text-inverse);
+}
+
+.mk-button--secondary {
+  border: 1px solid var(--mk-border-subtle);
+  color: var(--mk-text-primary);
+}
+
+/* ---- Toggle (48×28, Figma Mirror video switch) ---- */
+.mk-toggle {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 28px;
+  border-radius: var(--mk-radius-full);
+  background: var(--mk-bg-raised);
+  box-shadow: inset 0 0 0 1px var(--mk-border-subtle);
+  transition: background 150ms ease;
+}
+
+.mk-toggle[aria-checked='true'] {
+  background: var(--mk-accent-primary);
+  box-shadow: none;
+}
+
+.mk-toggle__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--mk-control-solid);
+  transition: transform 150ms ease;
+}
+
+.mk-toggle[aria-checked='true'] .mk-toggle__knob {
+  transform: translateX(20px);
+}
+
+/* ---- Segmented control ---- */
+.mk-segmented {
+  display: flex;
+  width: 100%;
+  padding: 3px;
+  border-radius: var(--mk-radius-full);
+  background: var(--mk-bg-raised);
+}
+
+.mk-segmented__option {
+  flex: 1;
+  height: 34px;
+  border-radius: var(--mk-radius-full);
+  color: var(--mk-text-secondary);
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.mk-segmented__option[aria-checked='true'] {
+  background: var(--mk-text-primary);
+  color: var(--mk-text-inverse);
+}
