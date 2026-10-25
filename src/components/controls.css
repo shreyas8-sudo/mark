@@ -281,3 +281,164 @@ button:focus-visible {
   background: var(--mk-control-solid);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
+
+/* ---------- Laptop / TV (≥1024px) shared chrome ---------- */
+.ambient {
+  position: absolute;
+  inset: -40px -80px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambient canvas {
+  width: 100%;
+  height: 100%;
+  filter: blur(60px) saturate(140%);
+  opacity: 0.45;
+}
+
+.ambient::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--mk-overlay-scrim);
+}
+
+.desk-top {
+  position: absolute;
+  top: 22px;
+  inset-inline: 32px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-6);
+}
+
+.desk-top__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mk-space-2);
+  padding: 10px 18px 10px 12px;
+  border-radius: var(--mk-radius-full);
+  color: var(--mk-text-primary);
+}
+
+.desk-top__title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.desk-top__title .mk-label-mono {
+  color: var(--mk-text-secondary);
+}
+
+.desk-top__mode {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Root of a laptop / TV screen. --ar (the cropped video's aspect) is set
+   inline; the frame and both side panels size themselves from it. */
+.desk {
+  --dock-h: 150px;
+  --frame-h: calc(100dvh - 88px - var(--dock-h) - 20px);
+  --frame-w: min(52vw, calc(var(--frame-h) * var(--ar, 0.5625)));
+}
+
+/* Video at its real (cropped) aspect, centred between top bar and dock. */
+.desk-frame {
+  position: absolute;
+  z-index: 1;
+  top: 88px;
+  left: 50%;
+  width: var(--frame-w);
+  aspect-ratio: var(--ar, 0.5625);
+  max-height: var(--frame-h);
+  transform: translateX(-50%);
+  border-radius: var(--mk-radius-lg);
+  overflow: hidden;
+  background: var(--mk-bg-base);
+}
+
+.desk-panel {
+  position: absolute;
+  top: 88px;
+  width: min(300px, calc((100vw - var(--frame-w)) / 2 - 72px));
+  z-index: 1;
+  max-height: calc(100dvh - 88px - var(--dock-h) - 20px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 20px;
+  border-radius: 24px;
+  color: var(--mk-text-primary);
+}
+
+.desk-panel--left {
+  right: calc(50% + var(--frame-w) / 2 + 40px);
+}
+
+.desk-panel--right {
+  left: calc(50% + var(--frame-w) / 2 + 40px);
+}
+
+.desk-panel__label {
+  color: var(--mk-text-secondary);
+}
+
+.desk-dock {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  min-height: var(--dock-h);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 32px 18px;
+  border-top: 1px solid var(--mk-border-subtle);
+  background: var(--mk-bg-surface);
+  color: var(--mk-text-primary);
+}
+
+.desk-dock__row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--mk-space-4);
+}
+
+.desk-dock__transport {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-4);
+}
+
+.desk-dock .glass-btn {
+  background: var(--mk-bg-raised);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.desk-dock .shutter {
+  width: 66px;
+  height: 66px;
+}
+
+.desk-dock .shutter__core {
+  width: 52px;
+  height: 52px;
+}
+
+.mk-kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--mk-glass-fill-strong);
+  color: var(--mk-text-primary);
+  text-align: center;
+}

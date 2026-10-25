@@ -1,15 +1,16 @@
 import { useLayoutEffect, useRef, useState, type Ref } from 'react'
-import { videoBox, type Crop, type Size } from '../lib/crop'
+import { videoBox, type Crop, type Fit, type Size } from '../lib/crop'
 
 type Props = {
   src: string
   mirror: boolean
   crop: Crop
   videoRef: Ref<HTMLVideoElement>
+  fit?: Fit
   onLoadedMetadata?: (video: HTMLVideoElement) => void
 }
 
-export function VideoStage({ src, mirror, crop, videoRef, onLoadedMetadata }: Props) {
+export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', onLoadedMetadata }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const [stage, setStage] = useState<Size | null>(null)
   // Keyed by src so a new clip never renders with the old clip's size.
@@ -18,6 +19,10 @@ export function VideoStage({ src, mirror, crop, videoRef, onLoadedMetadata }: Pr
 
   useLayoutEffect(() => {
     const el = stageRef.current!
+    // Measure now: ResizeObserver only reports on a rendered frame, which a
+    // background tab may not get for a while.
+    const r = el.getBoundingClientRect()
+    setStage({ w: r.width, h: r.height })
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect
       setStage({ w: width, h: height })
@@ -26,7 +31,7 @@ export function VideoStage({ src, mirror, crop, videoRef, onLoadedMetadata }: Pr
     return () => ro.disconnect()
   }, [])
 
-  const box = stage && video ? videoBox(stage, video, crop, mirror) : null
+  const box = stage && video ? videoBox(stage, video, crop, mirror, fit) : null
 
   return (
     <div ref={stageRef} className="video-stage">

@@ -32,8 +32,9 @@ export function RailButton({
   label,
   open,
   on,
+  iconSize = 28,
   ...rest
-}: { icon: IconName; label: string; open?: boolean; on?: boolean } & ButtonProps) {
+}: { icon: IconName; label: string; open?: boolean; on?: boolean; iconSize?: number } & ButtonProps) {
   return (
     <button
       type="button"
@@ -45,7 +46,7 @@ export function RailButton({
       {...rest}
     >
       <span className="rail-btn__disc mk-glass">
-        <Icon name={icon} size={28} />
+        <Icon name={icon} size={iconSize} />
       </span>
       <span className="rail-btn__label mk-label-mono mk-over-video">{label}</span>
     </button>
@@ -158,4 +159,39 @@ export function Segmented<T extends string>({
       ))}
     </div>
   )
+}
+
+/** Laptop / TV top bar: Library pill, dance title + meta, mode switch. */
+export function DeskTopBar({
+  title,
+  meta,
+  mode,
+  onBack,
+  onMode,
+}: {
+  title: string
+  meta: string
+  mode: 'learn' | 'rehearse'
+  onBack: () => void
+  onMode: (mode: 'learn' | 'rehearse') => void
+}) {
+  return (
+    <header className="desk-top">
+      <button type="button" className="desk-top__back mk-glass mk-body-strong" onClick={onBack}>
+        <Icon name="back" size={18} />
+        Library
+      </button>
+      <div className="desk-top__title">
+        <span className="mk-body-strong">{title}</span>
+        <span className="mk-label-mono">{meta}</span>
+      </div>
+      <div className="desk-top__mode">
+        <ModeCarousel mode={mode} onChange={(m) => m !== mode && onMode(m)} />
+      </div>
+    </header>
+  )
+}
+
+export function Kbd({ children }: { children: ReactNode }) {
+  return <kbd className="mk-kbd mk-label-mono">{children}</kbd>
 }

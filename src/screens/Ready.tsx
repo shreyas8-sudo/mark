@@ -6,6 +6,7 @@ import { useObjectUrl } from '../hooks/useObjectUrl'
 import { analyze, type Analysis } from '../lib/analyze'
 import { barCount } from '../lib/beat'
 import { FULL_FRAME } from '../lib/crop'
+import { captureFrame } from '../lib/thumb'
 import type { Dance } from '../types'
 import './Ready.css'
 
@@ -23,6 +24,7 @@ export function Ready({ file, onCancel, onDone }: Props) {
   const [size, setSize] = useState<{ w: number; h: number } | null>(null)
   const [result, setResult] = useState<Analysis | 'failed' | null>(null)
   const [split, setSplit] = useState(false)
+  const [thumb, setThumb] = useState<Blob | null>(null)
   const started = useRef(false)
 
   useEffect(() => {
@@ -72,6 +74,7 @@ export function Ready({ file, onCancel, onDone }: Props) {
       name: file.name.replace(/\.[^.]+$/, ''),
       createdAt: Date.now(),
       video: file,
+      thumb: thumb ?? undefined,
       duration: analysis.duration,
       bpm: analysis.bpm,
       offset: analysis.offset,
@@ -98,6 +101,9 @@ export function Ready({ file, onCancel, onDone }: Props) {
             const v = e.currentTarget
             setSize({ w: v.videoWidth, h: v.videoHeight })
             v.currentTime = Math.min(1, v.duration / 2)
+          }}
+          onSeeked={(e) => {
+            if (!thumb) void captureFrame(e.currentTarget).then(setThumb)
           }}
         />
       </div>

@@ -302,3 +302,293 @@
 .sound-option__text .mk-body-small {
   color: var(--mk-text-secondary);
 }
+
+.learn__stage {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------- 09 Learn · Landscape (phone on its side) ----------
+   Camera-app layout: tools row top right, shutter column on the right
+   edge, bars + beat scrubber bottom left. Same elements as portrait,
+   re-placed on a grid. */
+.learn__scrim--right {
+  inset: 0 0 0 auto;
+  width: 160px;
+  height: auto;
+  background: linear-gradient(to left, var(--mk-overlay-scrim-strong), transparent);
+}
+
+.learn[data-layout='landscape'] .learn__scrim--top {
+  height: 120px;
+}
+
+.learn[data-layout='landscape'] .learn__scrim--bottom {
+  height: 170px;
+}
+
+.learn[data-layout='landscape'] .learn__ui {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto 1fr auto auto;
+  column-gap: var(--mk-space-6);
+  row-gap: var(--mk-space-3);
+  padding:
+    max(env(safe-area-inset-top), 20px)
+    max(env(safe-area-inset-right), 30px)
+    max(env(safe-area-inset-bottom), 16px)
+    max(env(safe-area-inset-left), 20px);
+}
+
+.learn[data-layout='landscape'] .learn__top {
+  grid-area: 1 / 1;
+  justify-content: flex-start;
+  gap: var(--mk-space-12);
+}
+
+.learn[data-layout='landscape'] .learn__middle,
+.learn[data-layout='landscape'] .learn__bottom {
+  display: contents;
+}
+
+.learn[data-layout='landscape'] .count-badge {
+  grid-area: 2 / 1;
+  align-self: start;
+  justify-self: start;
+}
+
+.learn[data-layout='landscape'] .learn__rail {
+  grid-area: 1 / 1;
+  justify-self: end;
+  flex-direction: row;
+  gap: 10px;
+  margin: 0;
+}
+
+.learn[data-layout='landscape'] .rail-btn__label {
+  display: none;
+}
+
+.learn[data-layout='landscape'] .rail-btn__disc {
+  width: 34px;
+  height: 34px;
+}
+
+.learn[data-layout='landscape'] .bars {
+  grid-area: 3 / 1;
+  padding-left: 32px;
+  max-width: 620px;
+}
+
+.learn[data-layout='landscape'] .scrubber {
+  grid-area: 4 / 1;
+  padding-left: 32px;
+  max-width: 620px;
+}
+
+.learn[data-layout='landscape'] .transport {
+  grid-area: 1 / 2 / -1 / 3;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  width: auto;
+  margin: 0;
+}
+
+.learn[data-layout='landscape'] .popover--speed {
+  top: 50%;
+  bottom: auto;
+  left: calc(50% - 40px);
+  transform: translate(-50%, -50%);
+}
+
+.learn[data-layout='landscape'] .popover--sound {
+  top: 64px;
+  right: 120px;
+}
+
+/* ---------- 11 Learn · Laptop ---------- */
+.learn[data-layout='desktop'] {
+  user-select: auto;
+}
+
+.desk-frame__badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+}
+
+.desk-frame__chip {
+  position: absolute;
+  top: 20px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 10px;
+  border-radius: var(--mk-radius-full);
+  color: var(--mk-text-primary);
+}
+
+.learn-dock__timeline {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.learn-dock__timeline .scrubber__track {
+  flex: 1;
+}
+
+.learn-dock__bar {
+  color: var(--mk-accent-soft);
+  white-space: nowrap;
+}
+
+.learn-dock__time {
+  color: var(--mk-text-tertiary);
+  white-space: nowrap;
+}
+
+.learn[data-layout='desktop'] .scrubber__count {
+  text-shadow: none;
+}
+
+.learn-dock__step {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-2);
+  color: var(--mk-text-tertiary);
+}
+
+.learn-dock__hints {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20px;
+  color: var(--mk-text-tertiary);
+  white-space: nowrap;
+}
+
+.desk-dock .glass-btn.is-on {
+  background: var(--mk-accent-primary);
+  color: var(--mk-text-inverse);
+}
+
+/* Bars list (left panel) */
+.bars-panel {
+  gap: var(--mk-space-3);
+}
+
+.bars-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mk-space-2);
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.bars-panel__row {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  padding: 9px var(--mk-space-3);
+  border-radius: 14px;
+  background: var(--mk-glass-fill);
+  color: var(--mk-text-secondary);
+  text-align: left;
+}
+
+.bars-panel__row .mk-data-mono {
+  color: var(--mk-text-tertiary);
+}
+
+.bars-panel__row .mk-body-small {
+  flex: 1;
+}
+
+.bars-panel__row[data-active] {
+  background: var(--mk-accent-primary);
+  color: var(--mk-text-inverse);
+}
+
+.bars-panel__row[data-active] .mk-data-mono {
+  color: var(--mk-text-inverse);
+}
+
+.bars-panel__hint {
+  margin: 0;
+  color: var(--mk-text-tertiary);
+}
+
+/* Tools (right panel) */
+.tools-panel {
+  gap: var(--mk-space-4);
+}
+
+.tools-panel hr {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--mk-border-subtle);
+}
+
+.tools-panel__speed,
+.tools-panel__sound {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tools-panel__row {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  color: var(--mk-text-primary);
+  text-align: left;
+}
+
+.tools-panel__row .mk-body-strong,
+.tools-panel__row .desk-panel__label {
+  flex: 1;
+}
+
+.tools-panel__row .mk-kbd {
+  background: none;
+  color: var(--mk-text-tertiary);
+  padding: 0;
+}
+
+.tools-panel__value {
+  color: var(--mk-accent-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.tools-panel__chips {
+  display: flex;
+  gap: 6px;
+}
+
+.tools-chip {
+  padding: 6px var(--mk-space-3);
+  border-radius: var(--mk-radius-full);
+  background: var(--mk-glass-fill);
+  color: var(--mk-text-primary);
+}
+
+.tools-chip[data-active] {
+  background: var(--mk-accent-primary);
+  color: var(--mk-text-inverse);
+}
+
+.mk-segmented--glass {
+  background: var(--mk-glass-fill);
+}
+
+.mk-segmented--glass .mk-segmented__option {
+  height: auto;
+  padding: 7px 0;
+}
+
+.mk-segmented__option:disabled {
+  opacity: 0.4;
+}

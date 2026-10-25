@@ -27,6 +27,16 @@ describe('videoBox', () => {
     expect(box.top + 0.25 * box.height).toBeCloseTo(0)
   })
 
+  it('auto-fit shows a whole vertical crop on a landscape stage', () => {
+    const landscapePhone = { w: 844, h: 390 }
+    const box = videoBox(landscapePhone, { w: 540, h: 1172 }, FULL_FRAME, false, 'auto')
+    expect(box.height).toBeCloseTo(390)
+    expect(box.width).toBeLessThan(844)
+    expect(box.left + box.width / 2).toBeCloseTo(422)
+    // same way up → still covers
+    expect(videoBox(phone, { w: 540, h: 1172 }, FULL_FRAME, false, 'auto').width).toBeGreaterThanOrEqual(phone.w)
+  })
+
   it('mirrors the crop position horizontally', () => {
     const crop = { x: 0.5, y: 0, w: 0.5, h: 1 }
     const box = videoBox({ w: 100, h: 200 }, { w: 100, h: 100 }, crop, true)

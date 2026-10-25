@@ -35,6 +35,7 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
           src={src}
           mirror={dance.mirror}
           crop={dance.crop}
+          fit="cover"
           videoRef={null}
           onLoadedMetadata={(v) => {
             v.currentTime = barStart(run.barStart, dance)

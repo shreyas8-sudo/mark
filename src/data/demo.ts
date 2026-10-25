@@ -9,6 +9,7 @@ export const DEMO: Dance = {
   name: grid.name,
   createdAt: 0,
   video: '/demo/demo.mp4',
+  thumb: '/demo/thumb.jpg',
   duration: grid.duration,
   bpm: grid.bpm,
   offset: grid.offset,

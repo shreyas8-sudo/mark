@@ -8,10 +8,19 @@ export const FULL_FRAME: Crop = { x: 0, y: 0, w: 1, h: 1 }
 
 export type VideoBox = { left: number; top: number; width: number; height: number }
 
-export function videoBox(stage: Size, video: Size, crop: Crop, mirror: boolean): VideoBox {
+/**
+ * 'cover' fills the stage (trimming the crop's long side); 'contain' shows
+ * the whole crop with bars. 'auto' covers when the crop and the stage are
+ * the same way up, and contains when they aren't (a vertical clip on a
+ * landscape phone would otherwise lose most of the dancer).
+ */
+export type Fit = 'cover' | 'contain' | 'auto'
+
+export function videoBox(stage: Size, video: Size, crop: Crop, mirror: boolean, fit: Fit = 'cover'): VideoBox {
   const cropW = crop.w * video.w
   const cropH = crop.h * video.h
-  const scale = Math.max(stage.w / cropW, stage.h / cropH)
+  const contain = fit === 'contain' || (fit === 'auto' && cropW < cropH !== stage.w < stage.h)
+  const scale = (contain ? Math.min : Math.max)(stage.w / cropW, stage.h / cropH)
   const width = video.w * scale
   const height = video.h * scale
 

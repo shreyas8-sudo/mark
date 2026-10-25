@@ -42,8 +42,11 @@ export function SetupFrame({ src, initial, onBack, onSave }: Props) {
   const pointers = useRef(new Map<number, { x: number; y: number }>())
 
   useLayoutEffect(() => {
+    const el = areaRef.current!
+    const r = el.getBoundingClientRect() // see VideoStage: don't wait for a frame
+    setArea({ w: r.width, h: r.height })
     const ro = new ResizeObserver(([e]) => setArea({ w: e.contentRect.width, h: e.contentRect.height }))
-    ro.observe(areaRef.current!)
+    ro.observe(el)
     return () => ro.disconnect()
   }, [])
 

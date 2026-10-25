@@ -493,3 +493,138 @@
   width: 62px;
   height: 62px;
 }
+
+.rehearse-run__stage {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------- 10 Rehearse · Laptop / TV ---------- */
+.desk-frame__center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.desk-frame__center > * {
+  pointer-events: auto;
+}
+
+.keys-panel {
+  gap: 10px;
+  width: auto;
+}
+
+.keys-panel p {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  margin: 0;
+  font: 400 13px/1.4 var(--mk-font-sans);
+  color: var(--mk-text-secondary);
+  white-space: nowrap;
+}
+
+.run-panel {
+  gap: 14px;
+}
+
+.run-panel__row {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--mk-glass-fill);
+  color: var(--mk-text-primary);
+  text-align: left;
+}
+
+.run-panel__row .mk-data-mono {
+  color: var(--mk-text-tertiary);
+}
+
+.run-panel__row .mk-body-strong {
+  flex: 1;
+}
+
+.run-panel__row .mk-label-mono {
+  color: var(--mk-text-secondary);
+}
+
+.run-panel__row[data-active] {
+  background: var(--mk-accent-primary);
+}
+
+.run-panel__row[data-active] > * {
+  color: var(--mk-text-inverse);
+}
+
+.run-panel .mk-body-small {
+  margin: 0;
+  color: var(--mk-text-secondary);
+}
+
+.beat-timeline {
+  display: flex;
+  gap: 4px;
+}
+
+.beat-timeline__bar {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.beat-timeline__bar .mk-label-mono {
+  color: var(--mk-text-tertiary);
+  white-space: nowrap;
+}
+
+.beat-timeline__bar .mk-label-mono[data-now] {
+  color: var(--mk-accent-soft);
+}
+
+.beat-timeline__beats {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 8px;
+}
+
+.beat-timeline__beats span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--mk-glass-fill-strong);
+}
+
+.beat-timeline__beats span[data-state='past'] {
+  background: var(--mk-accent-primary);
+}
+
+.beat-timeline__beats span[data-state='now'] {
+  height: 8px;
+  background: var(--mk-accent-primary);
+}
+
+.run-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mk-text-primary);
+}
+
+.run-status__end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.end-btn--dock {
+  padding: 12px 18px 12px 16px;
+  background: var(--mk-bg-raised);
+}

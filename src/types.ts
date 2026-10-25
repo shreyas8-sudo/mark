@@ -9,6 +9,7 @@ export type Dance = {
   name: string
   createdAt: number
   video: Blob | string // Blob for user clips, URL for the bundled demo
+  thumb?: Blob | string // poster frame for the library card
   duration: number
   bpm: number
   offset: number // time of the first "1"
