@@ -1,4 +1,5 @@
 @import './styles/tokens.css';
+@import './components/controls.css';
 
 *,
 *::before,
@@ -25,24 +26,8 @@ button {
   color: inherit;
 }
 
-.shell {
-  min-height: 100%;
-  display: grid;
-  place-content: center;
-  gap: var(--mk-space-2);
-  padding: var(--mk-space-4);
-  text-align: center;
+img,
+video {
+  display: block;
 }
 
-.shell h1 {
-  margin: 0;
-}
-
-.shell p {
-  margin: 0;
-  color: var(--mk-text-secondary);
-}
-
-.accent {
-  color: var(--mk-accent-primary);
-}
