@@ -1,0 +1,96 @@
+/* mark. design tokens — exported from Figma (Mark/* variable collections + text styles).
+   Source of truth: Figma file "Palantir Design Challenge", Brand page.
+   Accent swaps by mode: set data-mode="learn" | "rehearse" on any container. */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Geist+Mono:wght@500;700&display=swap');
+
+:root {
+  /* ---- Theme (dark only) ---- */
+  --mk-bg-base: #0B0B0D;
+  --mk-bg-surface: #141417;
+  --mk-bg-raised: #1E1E23;
+  --mk-border-subtle: #2B2B31;
+
+  --mk-text-primary: #F4F2EE;
+  --mk-text-secondary: #8C8C97;
+  --mk-text-tertiary: #5C5C66;
+  --mk-text-inverse: #0B0B0D;
+
+  --mk-control-solid: #F4F2EE;
+  --mk-status-success: #3DDC97;
+  --mk-status-danger: #FF4D4F;
+
+  /* Glass: tint + backdrop blur. Figma uses its native Glass effect;
+     on the web approximate with backdrop-filter + an inner highlight. */
+  --mk-glass-tint: rgba(10, 10, 13, 0.35);
+  --mk-glass-fill: rgba(255, 255, 255, 0.14);
+  --mk-glass-fill-strong: rgba(255, 255, 255, 0.22);
+  --mk-glass-stroke: rgba(255, 255, 255, 0.22);
+  --mk-glass-blur: 18px;
+
+  --mk-overlay-scrim: rgba(0, 0, 0, 0.45);
+  --mk-overlay-scrim-strong: rgba(0, 0, 0, 0.70);
+
+  /* ---- Accent (default = Learn) ---- */
+  --mk-accent-primary: #4D7CFF;
+  --mk-accent-strong: #2F5BFF;
+  --mk-accent-soft: #A3B9FF;
+
+  /* ---- Spacing (4px scale) ---- */
+  --mk-space-1: 4px;
+  --mk-space-2: 8px;
+  --mk-space-3: 12px;
+  --mk-space-4: 16px;
+  --mk-space-6: 24px;
+  --mk-space-8: 32px;
+  --mk-space-12: 48px;
+
+  /* ---- Radius ---- */
+  --mk-radius-sm: 8px;
+  --mk-radius-md: 12px;
+  --mk-radius-lg: 20px;
+  --mk-radius-xl: 32px;
+  --mk-radius-full: 999px;
+
+  /* ---- Type ---- */
+  --mk-font-sans: 'Manrope', system-ui, sans-serif;
+  --mk-font-mono: 'Geist Mono', ui-monospace, monospace;
+}
+
+[data-mode="learn"] {
+  --mk-accent-primary: #4D7CFF;
+  --mk-accent-strong: #2F5BFF;
+  --mk-accent-soft: #A3B9FF;
+}
+
+[data-mode="rehearse"] {
+  --mk-accent-primary: #FF5A3C;
+  --mk-accent-strong: #F0441F;
+  --mk-accent-soft: #FFA48F;
+}
+
+/* ---- Text styles (Figma: Mark/*) ---- */
+.mk-count-display { font: 600 160px/0.9 var(--mk-font-sans); letter-spacing: -0.05em; }
+.mk-count-badge   { font: 700 28px/1 var(--mk-font-sans); letter-spacing: -0.02em; }
+.mk-display-light { font: 300 48px/1.05 var(--mk-font-sans); letter-spacing: -0.03em; }
+.mk-heading-xl    { font: 500 36px/1.15 var(--mk-font-sans); letter-spacing: -0.03em; }
+.mk-heading-l     { font: 400 28px/1.2 var(--mk-font-sans); letter-spacing: -0.02em; }
+.mk-heading-m     { font: 600 20px/1.25 var(--mk-font-sans); letter-spacing: -0.01em; }
+.mk-body          { font: 400 15px/1.45 var(--mk-font-sans); }
+.mk-body-strong   { font: 600 15px/1.45 var(--mk-font-sans); }
+.mk-body-small    { font: 400 13px/1.4 var(--mk-font-sans); }
+.mk-data-mono     { font: 500 14px/1.3 var(--mk-font-mono); font-variant-numeric: tabular-nums; }
+.mk-label-mono    { font: 500 11px/1.2 var(--mk-font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ---- Glass surface ---- */
+.mk-glass {
+  background: var(--mk-glass-tint);
+  -webkit-backdrop-filter: blur(var(--mk-glass-blur)) saturate(160%);
+  backdrop-filter: blur(var(--mk-glass-blur)) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+
+/* Labels floating over video need a shadow to stay legible on bright footage */
+.mk-over-video { text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }

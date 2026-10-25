@@ -1,0 +1,48 @@
+@import './styles/tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--mk-bg-base);
+  color: var(--mk-text-primary);
+  font-family: var(--mk-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+.shell {
+  min-height: 100%;
+  display: grid;
+  place-content: center;
+  gap: var(--mk-space-2);
+  padding: var(--mk-space-4);
+  text-align: center;
+}
+
+.shell h1 {
+  margin: 0;
+}
+
+.shell p {
+  margin: 0;
+  color: var(--mk-text-secondary);
+}
+
+.accent {
+  color: var(--mk-accent-primary);
+}
