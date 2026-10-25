@@ -62,7 +62,11 @@ export function CountBadge({ count, sub }: { count: ReactNode; sub: ReactNode })
 }
 
 /** Primary play/pause, styled after the camera shutter. */
-export function PlayShutter({ playing, ...rest }: { playing: boolean } & ButtonProps) {
+export function PlayShutter({
+  playing,
+  iconSize = 24,
+  ...rest
+}: { playing: boolean; iconSize?: number } & ButtonProps) {
   return (
     <button
       type="button"
@@ -71,7 +75,7 @@ export function PlayShutter({ playing, ...rest }: { playing: boolean } & ButtonP
       {...rest}
     >
       <span className="shutter__core">
-        <Icon name={playing ? 'pause' : 'play'} size={24} />
+        <Icon name={playing ? 'pause' : 'play'} size={iconSize} />
       </span>
     </button>
   )

@@ -229,3 +229,55 @@ button:focus-visible {
   background: var(--mk-text-primary);
   color: var(--mk-text-inverse);
 }
+
+/* Native range, styled to the Figma slider: 6px track, 28px thumb. */
+.mk-slider {
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.mk-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to right,
+    var(--mk-accent-primary) var(--fill),
+    var(--mk-glass-fill-strong) var(--fill)
+  );
+}
+
+.mk-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--mk-glass-fill-strong);
+}
+
+.mk-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--mk-accent-primary);
+}
+
+.mk-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -11px;
+  border-radius: 50%;
+  background: var(--mk-control-solid);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.mk-slider::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--mk-control-solid);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}

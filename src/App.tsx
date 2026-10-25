@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { DEMO } from './data/demo'
 import { revokeObjectUrl, useObjectUrl } from './hooks/useObjectUrl'
+import { unlockAudio } from './lib/countIn'
 import { Learn } from './screens/Learn'
 import { Library } from './screens/Library'
 import { Ready } from './screens/Ready'
+import { RehearseRun } from './screens/RehearseRun'
+import { RehearseSetup } from './screens/RehearseSetup'
 import { SetupFrame } from './screens/SetupFrame'
 import type { Dance } from './types'
 
@@ -14,13 +17,14 @@ type Screen =
   | { name: 'ready'; file: File }
   | { name: 'frame'; draft: Dance; from: 'ready' | 'learn' }
   | { name: 'learn'; id: string }
+  | { name: 'rehearse'; id: string; running: boolean }
 
 export default function App() {
   const [dances, setDances] = useState<Dance[]>([DEMO])
   const [screen, setScreen] = useState<Screen>({ name: 'library' })
 
   const dance =
-    screen.name === 'learn' ? dances.find((d) => d.id === screen.id)
+    screen.name === 'learn' || screen.name === 'rehearse' ? dances.find((d) => d.id === screen.id)
     : screen.name === 'frame' ? screen.draft
     : undefined
   const src = useObjectUrl(dance?.video)
@@ -71,7 +75,28 @@ export default function App() {
         src={src}
         onBack={() => setScreen({ name: 'library' })}
         onEditFrame={() => setScreen({ name: 'frame', draft: dance, from: 'learn' })}
+        onRehearse={() => setScreen({ name: 'rehearse', id: dance.id, running: false })}
         onChange={(patch) => update(dance.id, patch)}
+      />
+    )
+  }
+
+  if (screen.name === 'rehearse' && dance && src) {
+    const toSetup = () => setScreen({ ...screen, running: false })
+    return screen.running ? (
+      <RehearseRun key={dance.id} dance={dance} src={src} onEnd={toSetup} />
+    ) : (
+      <RehearseSetup
+        key={dance.id}
+        dance={dance}
+        src={src}
+        onBack={() => setScreen({ name: 'library' })}
+        onLearn={() => setScreen({ name: 'learn', id: dance.id })}
+        onChange={(run) => update(dance.id, { run })}
+        onStart={() => {
+          unlockAudio() // inside the tap, so iOS lets the count-in sound
+          setScreen({ ...screen, running: true })
+        }}
       />
     )
   }

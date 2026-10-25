@@ -4,11 +4,10 @@ import { Icon } from '../components/Icon'
 import { VideoStage } from '../components/VideoStage'
 import { usePlayhead } from '../hooks/usePlayhead'
 import { barStart, beatTime, COUNTS_PER_BAR, loopTarget, position, stepBeat, type Grid } from '../lib/beat'
+import { formatSpeed, SPEED_MAX, SPEED_MIN } from '../lib/speed'
 import type { Dance, Sound } from '../types'
 import './Learn.css'
 
-export const SPEED_MIN = 0.25
-export const SPEED_MAX = 1.25
 const SPEED_TICKS = [0.25, 0.5, 0.75, 1, 1.25]
 
 type Popover = 'speed' | 'sound' | null
@@ -18,10 +17,11 @@ type Props = {
   src: string
   onBack: () => void
   onEditFrame: () => void
+  onRehearse: () => void
   onChange: (patch: Partial<Dance>) => void
 }
 
-export function Learn({ dance, src, onBack, onEditFrame, onChange }: Props) {
+export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const grid: Grid = useMemo(() => ({ bpm: dance.bpm, offset: dance.offset }), [dance.bpm, dance.offset])
   const [duration, setDuration] = useState(dance.duration)
@@ -98,7 +98,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onChange }: Props) {
       <div className="learn__ui">
         <header className="learn__top">
           <GlassButton icon="back" label="Back to library" onClick={onBack} />
-          <ModeCarousel mode="learn" />
+          <ModeCarousel mode="learn" onChange={(m) => m === 'rehearse' && onRehearse()} />
           <GlassButton icon="more" label="More" />
         </header>
 
@@ -161,7 +161,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onChange }: Props) {
               aria-expanded={popover === 'speed'}
               onClick={() => setPopover(popover === 'speed' ? null : 'speed')}
             >
-              {formatSpeed(dance.lastSpeed)}×
+              {formatSpeed(dance.lastSpeed)}
             </button>
           </div>
         </footer>
@@ -173,8 +173,6 @@ export function Learn({ dance, src, onBack, onEditFrame, onChange }: Props) {
     </div>
   )
 }
-
-const formatSpeed = (s: number) => String(Math.round(s * 100) / 100)
 
 function BarChips({
   bars,
@@ -225,7 +223,7 @@ function SpeedPopover({ speed, onChange }: { speed: number; onChange: (s: number
       <output className="popover__value mk-heading-xl">{speed.toFixed(2)}×</output>
       <input
         type="range"
-        className="speed-slider"
+        className="mk-slider"
         min={SPEED_MIN}
         max={SPEED_MAX}
         step={0.05}
