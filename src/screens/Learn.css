@@ -592,3 +592,7 @@
 .mk-segmented__option:disabled {
   opacity: 0.4;
 }
+
+.learn__top-spacer {
+  width: 40px;
+}

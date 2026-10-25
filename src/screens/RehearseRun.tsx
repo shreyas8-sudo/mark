@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { Ambient } from '../components/Ambient'
 import { Button, DeskTopBar, GlassButton, Kbd, PlayShutter } from '../components/controls'
 import { Icon } from '../components/Icon'
@@ -49,6 +49,17 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
       dispatch({ type: 'reachedEnd' })
     }
   })
+
+  // iOS only lets a video with sound start from a tap, or once that element
+  // has been started by one. Every play() here comes later (the count-in
+  // timer), so bless the element now: this mounts inside the Start tap, and
+  // React commits a tap's update before the tap's event handling ends.
+  useLayoutEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    v.play().catch(() => {})
+    v.pause()
+  }, [])
 
   const phase = state.phase
   const seq = active?.seq

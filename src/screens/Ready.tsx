@@ -47,12 +47,15 @@ export function Ready({ file, onCancel, onDone }: Props) {
 
   const analysis = result && result !== 'failed' ? result : null
   const bars = analysis ? barCount(analysis.duration, analysis) : 0
-  const ready = !!(size && analysis && split)
+  // The preview's size is a nice-to-have: iOS may not load a video's
+  // metadata before playback, so never let it hold up the flow.
+  const ready = !!(analysis && split)
+  const mirrored = !!(size || result)
 
   const steps: { state: StepState; label: string }[] = [
-    { state: size ? 'done' : 'active', label: 'Mirrored' },
+    { state: mirrored ? 'done' : 'active', label: 'Mirrored' },
     {
-      state: result === 'failed' ? 'failed' : analysis ? 'done' : size ? 'active' : 'pending',
+      state: result === 'failed' ? 'failed' : analysis ? 'done' : 'active',
       label:
         result === 'failed'
           ? 'Couldn’t find a beat'
@@ -67,7 +70,7 @@ export function Ready({ file, onCancel, onDone }: Props) {
   ]
 
   const finish = () => {
-    if (!analysis || !size) return
+    if (!analysis) return
     onDone({
       ...DEMO,
       id: crypto.randomUUID(),
@@ -81,7 +84,7 @@ export function Ready({ file, onCancel, onDone }: Props) {
       bars,
       mirror: true,
       crop: FULL_FRAME,
-      orientation: size.h >= size.w ? 'vertical' : 'horizontal',
+      orientation: size && size.w > size.h ? 'horizontal' : 'vertical',
       lastSpeed: 1,
     })
   }

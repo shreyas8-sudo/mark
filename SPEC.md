@@ -102,30 +102,30 @@ Drive the UI from `requestVideoFrameCallback` (fallback: `requestAnimationFrame`
 ## Acceptance Criteria
 
 **Setup**
-- [ ] From the Library, a user can add a local video (mp4/mov) with one tap on **+**.
-- [ ] After adding, the app automatically mirrors it, detects the BPM and first beat, and splits it into bars, showing each step as it completes.
-- [ ] Setup · Frame lets the user pinch/drag (touch) or drag/scroll (mouse) to crop, toggle mirror, and switch Vertical/Horizontal. **Looks right** saves the settings and opens Learn.
-- [ ] Dances persist across reloads (IndexedDB). Cards show name, length, bars and last speed. ⋯ lets the user rename or delete a dance, and change its frame.
-- [ ] The demo dance is available on first load without uploading anything.
+- [x] From the Library, a user can add a local video (mp4/mov) with one tap on **+**.
+- [x] After adding, the app automatically mirrors it, detects the BPM and first beat, and splits it into bars, showing each step as it completes.
+- [x] Setup · Frame lets the user pinch/drag (touch) or drag/scroll (mouse) to crop, toggle mirror, and switch Vertical/Horizontal. **Looks right** saves the settings and opens Learn.
+- [x] Dances persist across reloads (IndexedDB). Cards show name, length, bars and last speed. ⋯ lets the user rename or delete a dance, and change its frame.
+- [x] The demo dance is available on first load without uploading anything.
 
 **Learn**
-- [ ] The count badge shows the current count (1–8) in sync with the music, to within one beat.
-- [ ] Tapping a bar chip jumps to the start of that bar. ‹ › steps exactly one beat.
-- [ ] Speed can be set to any value from 0.25 to 1.25 by slider, or to a preset by chip. Pitch doesn't change, and the speed is remembered per dance.
-- [ ] Loop on repeats the current bar seamlessly.
-- [ ] Restart and Play/Pause are always visible, labelled buttons. There are no hidden gestures.
-- [ ] Sound: **Music + counts** shows the badge. **Music** hides it.
+- [x] The count badge shows the current count (1–8) in sync with the music, to within one beat.
+- [x] Tapping a bar chip jumps to the start of that bar. ‹ › steps exactly one beat.
+- [x] Speed can be set to any value from 0.25 to 1.25 by slider, or to a preset by chip. Pitch doesn't change, and the speed is remembered per dance.
+- [x] Loop on repeats the current bar seamlessly.
+- [x] Restart and Play/Pause are always visible, labelled buttons. There are no hidden gestures.
+- [x] Sound: **Music + counts** shows the badge. **Music** hides it.
 
 **Rehearse**
-- [ ] Defaults to bars 1→4 with count-in on and three loops: 0.5×, 0.75×, 1×, each played once.
-- [ ] The user can change the bar range, add a loop (speed + plays), and delete a loop.
-- [ ] **Start rehearsing** plays the 5-6-7-8 count-in, then runs every loop in order with no taps needed. The pill always shows `LOOP n OF N · speed`.
-- [ ] Prev loop, Next loop, Restart and Pause work mid-run. **End rehearsal** stops and returns to setup.
-- [ ] The accent switches to coral in Rehearse and back to blue in Learn (via `data-mode`).
+- [x] Defaults to bars 1→4 with count-in on and three loops: 0.5×, 0.75×, 1×, each played once.
+- [x] The user can change the bar range, add a loop (speed + plays), and delete a loop.
+- [x] **Start rehearsing** plays the 5-6-7-8 count-in, then runs every loop in order with no taps needed. The pill always shows `LOOP n OF N · speed`.
+- [x] Prev loop, Next loop, Restart and Pause work mid-run. **End rehearsal** stops and returns to setup.
+- [x] The accent switches to coral in Rehearse and back to blue in Learn (via `data-mode`).
 
 **Platform**
 - [ ] Works on iPhone Safari (`playsinline`, audio unlocked on first tap) and desktop Chrome.
-- [ ] Laptop layout (≥1024px) shows the video at its real aspect with the docked bottom bar, and all keyboard shortcuts work.
+- [x] Laptop layout (≥1024px) shows the video at its real aspect with the docked bottom bar, and all keyboard shortcuts work.
 - [ ] Deployed on Vercel at a public URL, loads in under 3s on 4G, and no video data leaves the device.
 
 ## Tests / Success Criteria
@@ -176,5 +176,18 @@ If a phase overruns, cut from the end: laptop panels → landscape → rename. N
 
 ## Open questions
 
-- Is the demo clip my own recording? (Required before a public deploy.)
-- Exact BPM/offset of the demo clip: compute once and commit it as JSON.
+- ~~Is the demo clip my own recording?~~ Yes (confirmed). Shipped as-is, uncropped.
+- ~~Exact BPM/offset of the demo clip~~ 138 BPM; detector offset was 0.38s but put the first bass hit on count 2–3, so the committed offset is **1.02s** (first bass hit, on the best-fitting 138 BPM grid). 16 bars. `src/data/demo.json`.
+
+## Build notes (decisions made while building)
+
+- **Figma vs spec:** where they disagreed, the Figma frame won and is noted here.
+  - 04 rail labels follow 05 (Sound · Mirror · Loop · Frame).
+  - 08 puts **End rehearsal** at the top next to Restart (spec said bottom); the shutter caption reads Pause/Play, not "Restart".
+  - 04's **⋯** has no defined menu, so it isn't shipped (a spacer keeps the mode switch centred).
+- **Count-in** plays before each loop, not before repeat plays inside a loop. Clicks are synthesized (first one accented); voice counts remain a stretch goal.
+- **Fit:** when the framed shape and the screen disagree (vertical clip on a landscape phone), the whole frame is shown with bars instead of cropping most of the dancer away.
+- **Persistence:** settings and media are separate IndexedDB stores, so a speed change never rewrites the video. Deleting the demo is remembered; "Try the demo clip" restores it.
+- **iOS Safari hardening (not yet checked on a device):** the Rehearse video is started-and-paused inside the Start tap so later timer-driven `play()` calls are allowed; `navigator.audioSession.type = 'playback'` so the count-in isn't muted by the ringer switch; nothing waits on `loadedmetadata`, which iOS may defer until playback.
+- **Known limits:** beat detection listens for bass hits, so screen-recorded audio (footsteps) or tempo changes can mis-place the 1. Tap-to-sync is the future fix.
+- **Not yet verified:** real iPhone (portrait/landscape, pinch, count-in audible), TV via AirPlay/HDMI, 4G load time.

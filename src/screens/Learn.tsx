@@ -232,7 +232,9 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange }:
             <header className="learn__top">
               <GlassButton icon="back" label="Back to library" size={layout === 'landscape' ? 34 : 40} onClick={onBack} />
               <ModeCarousel mode="learn" onChange={(m) => m === 'rehearse' && onRehearse()} />
-              {layout === 'portrait' && <GlassButton icon="more" label="More" />}
+              {/* Figma's ⋯ has no defined menu yet; a spacer keeps the mode
+                  switch centred without shipping a button that does nothing. */}
+              {layout === 'portrait' && <span className="learn__top-spacer" aria-hidden />}
             </header>
 
             <div className="learn__middle">

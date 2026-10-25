@@ -8,6 +8,10 @@ let ctx: AudioContext | null = null
  * user-initiated resume plus a played buffer.
  */
 export function unlockAudio() {
+  // iOS mutes Web Audio (but not <video>) when the ringer switch is off,
+  // which would leave the music playing with a silent count-in.
+  const nav = navigator as Navigator & { audioSession?: { type: string } }
+  if (nav.audioSession) nav.audioSession.type = 'playback'
   ctx ??= new AudioContext()
   void ctx.resume()
   const silent = ctx.createBuffer(1, 1, 22050)

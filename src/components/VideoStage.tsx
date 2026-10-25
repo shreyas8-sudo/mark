@@ -50,11 +50,14 @@ export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', onLoaded
                 height: box.height,
                 transform: mirror ? 'scaleX(-1)' : undefined,
               }
-            : { visibility: 'hidden' }
+            : // Size unknown yet (iOS may not load metadata before the first
+              // play): fill the stage rather than show nothing.
+              { inset: 0, width: '100%', height: '100%', objectFit: 'cover', transform: mirror ? 'scaleX(-1)' : undefined }
         }
         onLoadedMetadata={(e) => {
-          const v = e.currentTarget
+          const v = e.currentTarget as HTMLVideoElement & { webkitPreservesPitch?: boolean }
           v.preservesPitch = true
+          v.webkitPreservesPitch = true // Safari < 17
           setLoaded({ src, size: { w: v.videoWidth, h: v.videoHeight } })
           onLoadedMetadata?.(v)
         }}
