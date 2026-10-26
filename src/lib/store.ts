@@ -37,11 +37,12 @@ export async function loadDances(): Promise<Dance[]> {
     if (files) dances.push({ ...m, ...files }) // a record without its video is unusable
   }
   if (!demoHidden) {
-    // Keep the user's settings for the demo (including a corrected first
-    // beat), but always take the clip itself from the build.
-    const { video, thumb, duration, bpm } = DEMO
+    // Keep the user's settings for the demo (including corrected counts),
+    // but always take the clip itself from the build.
+    const { video, thumb, duration, videoSize } = DEMO
+    const bpm = demoSaved?.bpm ?? DEMO.bpm
     const offset = demoSaved?.offset ?? DEMO.offset
-    dances.push({ ...DEMO, ...demoSaved, video, thumb, duration, bpm, offset, bars: barCount(duration, { bpm, offset }) })
+    dances.push({ ...DEMO, ...demoSaved, video, thumb, duration, videoSize, bpm, offset, bars: barCount(duration, { bpm, offset }) })
   }
   return dances.sort((a, b) => b.createdAt - a.createdAt)
 }

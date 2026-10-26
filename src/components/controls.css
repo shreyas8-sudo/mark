@@ -45,37 +45,6 @@ button:focus-visible {
   white-space: nowrap;
 }
 
-/* ---- Rail button ---- */
-.rail-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--mk-space-1);
-  color: var(--mk-text-primary);
-}
-
-.rail-btn__disc {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  border-radius: var(--mk-radius-full);
-  transition: background 120ms ease, color 120ms ease;
-}
-
-.rail-btn[data-on] .rail-btn__disc {
-  box-shadow: inset 0 0 0 2px var(--mk-accent-soft);
-}
-
-.rail-btn[data-open] .rail-btn__disc {
-  background: var(--mk-control-solid);
-  color: var(--mk-text-inverse);
-}
-
-.rail-btn:disabled {
-  opacity: 0.45;
-}
-
 /* ---- Play shutter ---- */
 .shutter {
   display: grid;

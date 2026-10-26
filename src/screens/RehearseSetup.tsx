@@ -57,6 +57,7 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
           src={src}
           mirror={dance.mirror}
           crop={dance.crop}
+          videoSize={dance.videoSize}
           fit="contain"
           videoRef={videoRef}
           onLoadedMetadata={(v) => {
@@ -228,7 +229,8 @@ function LoopSheet({
         <div className="rehearse-card rehearse-card--sunken">
           <div className="rehearse-card__text">
             <span className="mk-body-strong">Plays</span>
-            <span className="mk-body-small">Times through {range.toLowerCase()}</span>
+            {/* Manrope has no arrow glyph (Geist Mono does), so say it in words here. */}
+            <span className="mk-body-small">Times through {range.toLowerCase().replace('→', 'to')}</span>
           </div>
           <button
             type="button"

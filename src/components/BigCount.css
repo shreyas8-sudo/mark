@@ -24,11 +24,6 @@
   color: var(--mk-accent-primary);
 }
 
-.big-count__caption {
-  color: var(--mk-accent-soft);
-  white-space: nowrap;
-}
-
 @keyframes count-pulse {
   40% {
     transform: scale(1.25);

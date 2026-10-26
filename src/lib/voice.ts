@@ -1,9 +1,9 @@
-// Spoken counts "one"…"eight" (+ "your turn"), decoded once and played on
+// Spoken counts "one"…"eight", decoded once and played on
 // the AudioContext clock. Never speechSynthesis: it lags and drifts.
 import { audioContext } from './countIn'
 
-export type VoiceName = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | 'your-turn'
-const NAMES: VoiceName[] = ['1', '2', '3', '4', '5', '6', '7', '8', 'your-turn']
+export type VoiceName = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8'
+const NAMES: VoiceName[] = ['1', '2', '3', '4', '5', '6', '7', '8']
 
 type Clip = { buffer: AudioBuffer; lead: number }
 let loading: Promise<Map<VoiceName, Clip>> | null = null

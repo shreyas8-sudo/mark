@@ -29,11 +29,3 @@ export const NUDGE_AFTER_LOOPS = 3
 export function nextSpeed(speed: number) {
   return NUDGE_STEPS.find((s) => s > speed + 1e-6) ?? null
 }
-
-// ---- "Your turn" echo ----
-/**
- * Echo mode on a bar: the video plays counts 1–4 (the voice says "your
- * turn" on 4), freezes on 5, and the dancer does 5–8 to spoken counts.
- * Returns the video time where the video hands over (count 5).
- */
-export const echoHandover = (barStartTime: number, beat: number) => barStartTime + 4 * beat

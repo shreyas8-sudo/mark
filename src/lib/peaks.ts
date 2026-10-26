@@ -40,3 +40,22 @@ export function peakMax(peaks: Float32Array) {
   for (const v of peaks) if (v > m) m = v
   return m || 1
 }
+
+/**
+ * Snap a time dropped on a waveform window to the nearest hit's onset
+ * within ±`radius` s: the beat is where a hit starts, not where it's
+ * loudest, so take the steepest rise in level. Small rises (footsteps,
+ * noise) don't count: the time stays where it was put.
+ */
+export function snapOnset(peaks: Float32Array, winStart: number, winLen: number, time: number, radius = 0.06) {
+  const per = peaks.length / winLen
+  const from = Math.max(1, Math.floor((time - radius - winStart) * per))
+  const to = Math.min(peaks.length, Math.ceil((time + radius - winStart) * per))
+  let best = -1
+  let bestRise = peakMax(peaks) * 0.25
+  for (let i = from; i < to; i++) {
+    const rise = peaks[i] - peaks[i - 1]
+    if (rise > bestRise) [best, bestRise] = [i, rise]
+  }
+  return best < 0 ? time : winStart + best / per
+}

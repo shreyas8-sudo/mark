@@ -20,7 +20,7 @@ import type { Dance } from '../types'
 import './SetupFrame.css'
 
 type Orientation = Dance['orientation']
-export type FrameSettings = { crop: Crop; mirror: boolean; orientation: Orientation }
+export type FrameSettings = { crop: Crop; mirror: boolean; orientation: Orientation; videoSize?: Size }
 
 type Props = {
   src: string
@@ -174,7 +174,7 @@ export function SetupFrame({ src, initial, onBack, onSave }: Props) {
           <Button variant="secondary" onClick={() => setFraming(CENTRE)}>
             Reset
           </Button>
-          <Button disabled={!crop} onClick={() => crop && onSave({ crop, mirror, orientation })}>
+          <Button disabled={!crop} onClick={() => crop && onSave({ crop, mirror, orientation, videoSize: video ?? undefined })}>
             Looks right
           </Button>
         </div>

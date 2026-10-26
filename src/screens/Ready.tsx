@@ -11,19 +11,28 @@ import { captureFrame } from '../lib/thumb'
 import type { Dance } from '../types'
 import './Ready.css'
 
-type StepState = 'pending' | 'active' | 'done' | 'failed'
+type StepState = 'pending' | 'active' | 'done' | 'manual'
 
 type Props = {
   file: File
   onCancel: () => void
-  onDone: (draft: Dance, audio: AudioBuffer) => void
+  /** `audio` is missing when the clip has no readable audio track. */
+  onDone: (draft: Dance, audio: AudioBuffer | undefined, setCounts: boolean) => void
 }
 
-/** 02 Getting it ready: mirror, find the beat, split into bars — all on-device. */
+// Placeholder grid for a clip whose counts the dancer will set by hand.
+const UNSET = { bpm: 120, offset: 0 }
+
+/**
+ * 02 Getting it ready: mirror, find the beat, split into bars — all
+ * on-device. A clip is never turned away: with no beat found (or no audio
+ * at all), the dancer sets the counts by hand next.
+ */
 export function Ready({ file, onCancel, onDone }: Props) {
   const src = useObjectUrl(file)
   const [size, setSize] = useState<{ w: number; h: number } | null>(null)
-  const [result, setResult] = useState<Analysis | 'failed' | null>(null)
+  const [duration, setDuration] = useState<number | null>(null) // from the video, if the audio won't decode
+  const [result, setResult] = useState<Analysis | 'noAudio' | null>(null)
   const [split, setSplit] = useState(false)
   const [thumb, setThumb] = useState<Blob | null>(null)
   const started = useRef(false)
@@ -36,43 +45,43 @@ export function Ready({ file, onCancel, onDone }: Props) {
       .then(setResult)
       .catch((err) => {
         console.error(err)
-        setResult('failed')
+        setResult('noAudio')
       })
   }, [file])
 
+  const analysis = result && result !== 'noAudio' ? result : null
+  const found = analysis?.beat ?? null
+  const noBeat = result === 'noAudio' || (!!analysis && !found)
+
   // Let "found the beat" land before "split into bars" so each step reads.
   useEffect(() => {
-    if (!result || result === 'failed') return
+    if (!found) return
     const t = setTimeout(() => setSplit(true), 350)
     return () => clearTimeout(t)
-  }, [result])
+  }, [found])
 
-  const analysis = result && result !== 'failed' ? result : null
-  const bars = analysis ? barCount(analysis.duration, analysis) : 0
+  const clipDuration = analysis?.duration ?? duration
+  const bars = found && analysis ? barCount(analysis.duration, found) : 0
   // The preview's size is a nice-to-have: iOS may not load a video's
   // metadata before playback, so never let it hold up the flow.
-  const ready = !!(analysis && split)
+  const ready = (!!found && split) || (noBeat && clipDuration != null)
   const mirrored = !!(size || result)
 
   const steps: { state: StepState; label: string }[] = [
     { state: mirrored ? 'done' : 'active', label: 'Mirrored' },
     {
-      state: result === 'failed' ? 'failed' : analysis ? 'done' : 'active',
-      label:
-        result === 'failed'
-          ? 'Couldn’t find a beat'
-          : analysis
-            ? `Found the beat · ${Math.round(analysis.bpm)} BPM`
-            : 'Finding the beat',
+      state: noBeat ? 'manual' : found ? 'done' : 'active',
+      label: noBeat ? 'Couldn’t find the beat' : found ? `Found the beat · ${Math.round(found.bpm)} BPM` : 'Finding the beat',
     },
     {
-      state: split ? 'done' : analysis ? 'active' : 'pending',
-      label: split ? `Split into ${bars} bars` : 'Splitting into bars',
+      state: split ? 'done' : found ? 'active' : 'pending',
+      label: split ? `Split into ${bars} bars` : noBeat ? 'Bars follow from your counts' : 'Splitting into bars',
     },
   ]
 
   const finish = () => {
-    if (!analysis) return
+    if (!ready || clipDuration == null) return
+    const grid = found ?? UNSET
     onDone({
       ...DEMO,
       id: crypto.randomUUID(),
@@ -80,16 +89,17 @@ export function Ready({ file, onCancel, onDone }: Props) {
       createdAt: Date.now(),
       video: file,
       thumb: thumb ?? undefined,
-      duration: analysis.duration,
-      bpm: analysis.bpm,
-      offset: analysis.offset,
-      peaks: analysis.peaks,
-      bars,
+      duration: clipDuration,
+      bpm: grid.bpm,
+      offset: grid.offset,
+      peaks: analysis?.peaks,
+      bars: barCount(clipDuration, grid),
       mirror: true,
       crop: FULL_FRAME,
+      videoSize: size ?? undefined,
       orientation: size && size.w > size.h ? 'horizontal' : 'vertical',
       speed: 0.5,
-    }, analysis.audio)
+    }, analysis?.audio, noBeat)
   }
 
   return (
@@ -107,6 +117,7 @@ export function Ready({ file, onCancel, onDone }: Props) {
           onLoadedMetadata={(e) => {
             const v = e.currentTarget
             setSize({ w: v.videoWidth, h: v.videoHeight })
+            if (Number.isFinite(v.duration)) setDuration(v.duration)
             v.currentTime = Math.min(1, v.duration / 2)
           }}
           onSeeked={(e) => {
@@ -122,28 +133,19 @@ export function Ready({ file, onCancel, onDone }: Props) {
             <li key={s.label} className="ready__step mk-body" data-state={s.state}>
               <span className="ready__mark">
                 {s.state === 'done' && <Icon name="check" size={16} />}
-                {s.state === 'failed' && <Icon name="close" size={16} />}
               </span>
               {s.label}
             </li>
           ))}
         </ul>
         <p className="ready__note mk-body-small">
-          {result === 'failed'
-            ? 'Mark needs a clear beat to count. Try a clip where the music is loud and steady.'
-            : 'Everything stays on your device.'}
+          {noBeat ? 'Couldn’t find the beat. Set your counts: mark count 1 and count 8, and Mark does the rest.' : 'Everything stays on your device.'}
         </p>
       </section>
 
-      {result === 'failed' ? (
-        <Button className="ready__cta" onClick={onCancel}>
-          Choose another video
-        </Button>
-      ) : (
-        <Button className="ready__cta" disabled={!ready} onClick={finish}>
-          Check the first beat
-        </Button>
-      )}
+      <Button className="ready__cta" disabled={!ready} onClick={finish}>
+        {noBeat ? 'Set your counts' : 'Check the first beat'}
+      </Button>
     </main>
   )
 }

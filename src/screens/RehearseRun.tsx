@@ -28,7 +28,10 @@ type Props = {
 export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
   const { run } = dance
   const layout = useLayout()
-  const [aspect, setAspect] = useState<number | null>(null)
+  // Known up front from the stored size (iOS may hold back metadata until play).
+  const [aspect, setAspect] = useState<number | null>(() =>
+    dance.videoSize ? (dance.crop.w * dance.videoSize.w) / (dance.crop.h * dance.videoSize.h) : null,
+  )
   const videoRef = useRef<HTMLVideoElement>(null)
   const reducer = useMemo(() => runReducer(run), [run])
   const [state, dispatch] = useReducer(reducer, IDLE, (s) => reducer(s, { type: 'start' }))
@@ -179,6 +182,7 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
           src={src}
           mirror={dance.mirror}
           crop={dance.crop}
+          videoSize={dance.videoSize}
           fit="contain"
           videoRef={videoRef}
           onTap={togglePlay}

@@ -3,8 +3,9 @@ import { Ambient } from '../components/Ambient'
 import { BarStrip } from '../components/BarStrip'
 import { BigCount } from '../components/BigCount'
 import { CoachMarks, type CoachMark } from '../components/CoachMarks'
-import { Button, DeskTopBar, GlassButton, ModeCarousel, PlayShutter, RailButton, ShortcutsButton, Toggle } from '../components/controls'
+import { Button, DeskTopBar, GlassButton, ModeCarousel, PlayShutter, ShortcutsButton } from '../components/controls'
 import { Icon } from '../components/Icon'
+import { AnchoredPopover, ToolRow, type Tool } from '../components/Tools'
 import { VideoStage } from '../components/VideoStage'
 import { DEMO } from '../data/demo'
 import { useKeys } from '../hooks/useKeys'
@@ -14,19 +15,9 @@ import { usePlayhead } from '../hooks/usePlayhead'
 import { useVoiceCounts } from '../hooks/useVoiceCounts'
 import { barEnd, barStart, beatLen, loopTarget, position, stepBeat, type Grid } from '../lib/beat'
 import { coachMarksDone } from '../lib/coachMarks'
-import { audioContext, countIn as playCountIn, unlockAudio } from '../lib/countIn'
-import {
-  echoHandover,
-  followLearned,
-  lastLearned,
-  markLearned,
-  nextSpeed,
-  NUDGE_AFTER_LOOPS,
-  SLOW_SPEED,
-  unmarkLearned,
-} from '../lib/learn'
+import { countIn as playCountIn, unlockAudio } from '../lib/countIn'
+import { followLearned, lastLearned, markLearned, nextSpeed, NUDGE_AFTER_LOOPS, SLOW_SPEED, unmarkLearned } from '../lib/learn'
 import { formatSpeed, SPEED_MAX, SPEED_MIN } from '../lib/speed'
-import { loadVoices, playVoices, type VoiceName } from '../lib/voice'
 import type { Dance, Sound } from '../types'
 import './Learn.css'
 
@@ -40,18 +31,18 @@ const SHORTCUTS: [string, string][] = [
   ['L', 'Loop this bar'],
   ['M', 'Mirror'],
   ['C', 'Count-in on / off'],
-  ['Enter', 'Got it ✓'],
+  ['Enter', 'Got it'],
   ['F', 'Edit frame'],
   ['?', 'Show shortcuts'],
 ]
 
-type Popover = 'speed' | 'sound' | 'keys' | null
+type Popover = { name: 'speed' | 'sound'; anchor: HTMLElement } | { name: 'keys' } | null
 
 // First visit only, over the demo.
 const COACH_MARKS: CoachMark[] = [
   { target: 'strip', text: 'Tap a chunk to jump to a bar' },
   { target: 'speed', text: 'Start slow. Speed up when it clicks' },
-  { target: 'got-it', text: "Got it? Tap ✓, then rehearse what you've learned" },
+  { target: 'got-it', text: "Got it? Tap the tick, then rehearse what you've learned" },
 ]
 
 type Props = {
@@ -72,16 +63,13 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
   const stripRef = useRef<HTMLDivElement>(null)
   const grid: Grid = useMemo(() => ({ bpm: dance.bpm, offset: dance.offset }), [dance.bpm, dance.offset])
   const [duration, setDuration] = useState(dance.duration)
-  const [aspect, setAspect] = useState<number | null>(null)
+  const [videoSize, setVideoSize] = useState(dance.videoSize)
+  const aspect = videoSize ? (dance.crop.w * videoSize.w) / (dance.crop.h * videoSize.h) : null
   // Guided: open on the bar being learned, looping it.
   const [loopBar, setLoopBar] = useState<number | null>(() => Math.min(Math.max(1, dance.currentBar), dance.bars))
   const [runEnd, setRunEnd] = useState<number | null>(null) // "Run 1–N together"
   const [sheet, setSheet] = useState<{ bar: number; learned: number[] } | null>(null)
   const [coaching, setCoaching] = useState(() => dance.id === DEMO.id && !coachMarksDone())
-  // "Your turn" echo: video does 1–4, the dancer does 5–8 to spoken counts.
-  const [echo, setEcho] = useState(false)
-  const [yourTurn, setYourTurn] = useState(false)
-  const cancelTurn = useRef<(() => void) | null>(null)
   // Speed-up nudge after a few laps of the same bar at the same speed.
   const laps = useRef({ key: '', count: 0 })
   const nudged = useRef(new Set<string>())
@@ -92,7 +80,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
   const cancelCountIn = useRef<(() => void) | null>(null)
   const peaks = usePeaks(dance, onPeaks)
 
-  // Per-frame work (run-through end, echo handover, bar loop) is defined
+  // Per-frame work (run-through end, bar loop) is defined
   // further down, once the handlers it calls exist.
   const onFrame = useRef<(video: HTMLVideoElement) => void>(() => {})
   const { t, playing } = usePlayhead(videoRef, (video) => onFrame.current(video))
@@ -113,18 +101,11 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     if (v) v.muted = dance.sound === 'voice'
   }, [dance.sound])
 
-  const echoBar = loopBar ?? currentBar
   useVoiceCounts(videoRef, {
-    enabled: dance.sound !== 'music' || echo,
+    enabled: dance.sound !== 'music',
     grid,
     volume: dance.sound === 'voice' ? 1 : 0.7,
-    stopAt:
-      echo ? echoHandover(barStart(echoBar, grid), beatLen(grid))
-      : runEnd != null ? barEnd(runEnd, grid)
-      : loopBar != null ? barEnd(loopBar, grid)
-      : null,
-    yourTurnOnFour: echo,
-    skipAt: echo ? barStart(echoBar, grid) : null, // the echo engine says that "1"
+    stopAt: runEnd != null ? barEnd(runEnd, grid) : loopBar != null ? barEnd(loopBar, grid) : null,
   })
 
   // Remember where guided Learn resumes.
@@ -133,13 +114,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     if (loopBar != null && loopBar !== savedBar) onChange({ currentBar: loopBar })
   }, [loopBar, savedBar, onChange])
 
-  useEffect(
-    () => () => {
-      cancelCountIn.current?.()
-      cancelTurn.current?.()
-    },
-    [],
-  )
+  useEffect(() => () => cancelCountIn.current?.(), [])
 
   // Phone (portrait and landscape): the video gets everything above the bar
   // strip, so the strip never covers the dancer's feet; the transport floats
@@ -165,65 +140,6 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     cancelCountIn.current = null
     setCountingIn(null)
   }
-  // ---- "Your turn" echo ----
-  const stopYourTurn = () => {
-    cancelTurn.current?.()
-    cancelTurn.current = null
-    setYourTurn(false)
-    setCountingIn(null)
-  }
-  /** Freeze on 5; the voice counts 5–8 on the beat; the video picks up at the next 1. */
-  function startYourTurn(bar: number) {
-    const v = videoRef.current
-    if (!v) return
-    v.pause()
-    const beatReal = beatLen(grid) / v.playbackRate
-    const timers: number[] = []
-    let voices: { cancel: () => void } | null = null
-    let cancelled = false
-    cancelTurn.current = () => {
-      cancelled = true
-      timers.forEach(clearTimeout)
-      voices?.cancel()
-    }
-    setYourTurn(true)
-    // When count 5 *should* have sounded, on the audio clock: the frame that
-    // noticed the handover may be a little late, and the rest of the bar
-    // (and the restart on 1) must stay on the beat grid regardless.
-    const ctx = audioContext()
-    const lateBy = (v.currentTime - echoHandover(barStart(bar, grid), beatLen(grid))) / v.playbackRate
-    const t0 = ctx.currentTime - Math.max(0, lateBy)
-    void loadVoices().then((clips) => {
-      if (cancelled) return
-      // 5-6-7-8 for the dancer, then the "1" the video restarts on.
-      voices = playVoices(
-        clips,
-        ['5', '6', '7', '8', '1'].map((name, i) => ({
-          name: name as VoiceName,
-          at: Math.max(t0 + i * beatReal, ctx.currentTime + 0.005), // "5" now if already due
-        })),
-      )
-      const at = (i: number) => Math.max(0, (t0 + i * beatReal - ctx.currentTime) * 1000)
-      ;[5, 6, 7, 8].forEach((c, i) => timers.push(window.setTimeout(() => setCountingIn(c), at(i))))
-      // Cue the video at the top of the bar on 8, so it can start right on 1.
-      timers.push(window.setTimeout(() => (v.currentTime = barStart(bar, grid)), at(3)))
-      timers.push(
-        window.setTimeout(() => {
-          cancelTurn.current = null
-          setYourTurn(false)
-          setCountingIn(null)
-          countLap(bar)
-          void v.play().catch(() => {})
-        }, at(4)),
-      )
-    })
-  }
-  const toggleEcho = (on: boolean) => {
-    stopYourTurn()
-    setEcho(on)
-    if (on && loopBar == null) setLoopBar(currentBar) // echo works one bar at a time
-  }
-
   // ---- Speed-up nudge (never changes speed by itself) ----
   function countLap(bar: number) {
     const key = `${bar}@${dance.speed}`
@@ -250,12 +166,6 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
           setRunEnd(null)
           setSheet({ bar: runEnd, learned: dance.learned })
         }
-        return
-      }
-      if (echo) {
-        if (cancelTurn.current) return
-        const bar = loopBar ?? Math.min(position(video.currentTime, grid).bar, dance.bars)
-        if (video.currentTime >= echoHandover(barStart(bar, grid), beatLen(grid))) startYourTurn(bar)
         return
       }
       if (loopBar == null) return
@@ -291,7 +201,6 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     const v = videoRef.current
     if (!v) return
     if (cancelCountIn.current) return stopCountIn() // tap during 5-6-7-8 cancels it
-    if (cancelTurn.current) return stopYourTurn() // ...and during your turn
     if (!v.paused) return v.pause()
     if (!dance.countIn) return void v.play().catch(() => {})
     startFrom(barStart(loopBar ?? currentBar, grid)) // count in from the top of the bar
@@ -358,7 +267,9 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     onChange({ sound })
     setPopover(null)
   }
-  const togglePopover = (p: Popover) => setPopover(popover === p ? null : p)
+  const openAt = (name: 'speed' | 'sound', anchor: HTMLElement) =>
+    setPopover(popover?.name === name ? null : { name, anchor })
+  const toggleKeys = () => setPopover(popover?.name === 'keys' ? null : { name: 'keys' })
 
   useKeys({
     ' ': togglePlay,
@@ -372,7 +283,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     c: toggleCountIn,
     f: onEditFrame,
     Enter: gotIt,
-    '?': () => togglePopover('keys'),
+    '?': toggleKeys,
     Escape: () => {
       setPopover(null)
       setSheet(null)
@@ -396,24 +307,15 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
       onUnlearn={unlearn}
     />
   )
-  const speedPill = (
-    <button
-      type="button"
-      className="speed-pill mk-glass"
-      data-coach="speed"
-      data-open={popover === 'speed' || undefined}
-      aria-label={`Speed ${dance.speed}×`}
-      aria-expanded={popover === 'speed'}
-      onClick={() => togglePopover('speed')}
-    >
-      {formatSpeed(dance.speed)}
-    </button>
-  )
   const desktop = layout === 'desktop'
-  const railIcon = layout === 'landscape' ? 16 : 28
-  const count =
-    countingIn != null ? <BigCount count={countingIn} beat={countingIn} countIn caption={yourTurn ? 'Your turn' : undefined} />
-    : <BigCount count={pos.count} beat={pos.beatIndex} />
+  // Regular counts sit at the side; the 5-6-7-8 count-in takes the centre
+  // of the video, big.
+  const count = <BigCount count={countingIn != null ? null : pos.count} beat={pos.beatIndex} />
+  const countInOverlay = countingIn != null && (
+    <div className="count-in-centre">
+      <BigCount count={countingIn} beat={countingIn} countIn />
+    </div>
+  )
   const nudgeToast = nudge != null && (
     <div className="nudge mk-glass" role="status">
       <span className="mk-body-strong">Feeling it? Try {formatSpeed(nudge)}</span>
@@ -432,7 +334,23 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
       </button>
     </div>
   )
-  const countInGlyph = '5–8'
+  // Same buttons, same order, on phone and laptop.
+  const tools: Tool[] = [
+    {
+      id: 'speed',
+      label: `Speed ${formatSpeed(dance.speed)}`,
+      glyph: formatSpeed(dance.speed),
+      open: popover?.name === 'speed',
+      coach: 'speed',
+      onClick: (b) => openAt('speed', b),
+    },
+    { id: 'sound', label: 'Sound', icon: 'sound', open: popover?.name === 'sound', onClick: (b) => openAt('sound', b) },
+    { id: 'mirror', label: 'Mirror', icon: 'mirror', on: dance.mirror, onClick: toggleMirror },
+    { id: 'count-in', label: 'Count-in', glyph: '5678', on: dance.countIn, onClick: toggleCountIn },
+    { id: 'loop', label: loopBar != null ? 'Stop looping' : 'Loop this bar', icon: 'loop', on: loopBar != null, onClick: toggleLoop },
+    { id: 'frame', label: 'Edit frame', icon: 'frame', onClick: onEditFrame },
+  ]
+  const toolRow = <ToolRow tools={tools} size={layout === 'landscape' ? 34 : 40} />
   const thisBarLearned = dance.learned.includes(loopBar ?? currentBar)
   const gotItButton = (size = 40) => (
     <GlassButton
@@ -456,15 +374,16 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
       onClose={() => setSheet(null)}
     />
   )
-  const popovers = (
-    <>
-      {(popover === 'speed' || popover === 'sound') && (
-        <button type="button" className="popover-dismiss" aria-label="Close" onClick={() => setPopover(null)} />
-      )}
-      {popover === 'speed' && <SpeedPopover speed={dance.speed} onChange={setSpeed} />}
-      {popover === 'sound' && <SoundPopover sound={dance.sound} onChange={setSound} echo={echo} onEcho={toggleEcho} />}
-    </>
-  )
+  const popovers =
+    popover?.name === 'speed' ? (
+      <AnchoredPopover anchor={popover.anchor} label="Speed" className="popover--speed" onClose={() => setPopover(null)}>
+        <SpeedPopover speed={dance.speed} onChange={setSpeed} />
+      </AnchoredPopover>
+    ) : popover?.name === 'sound' ? (
+      <AnchoredPopover anchor={popover.anchor} label="Sound" className="popover--sound" onClose={() => setPopover(null)}>
+        <SoundPopover sound={dance.sound} onChange={setSound} />
+      </AnchoredPopover>
+    ) : null
 
   return (
     <div
@@ -480,6 +399,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
           src={src}
           mirror={dance.mirror}
           crop={dance.crop}
+          videoSize={videoSize}
           fit="contain"
           videoRef={videoRef}
           onTap={togglePlay}
@@ -487,17 +407,11 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
             v.playbackRate = dance.speed
             if (loopBar != null) v.currentTime = barStart(loopBar, grid)
             setDuration(v.duration)
-            setAspect((dance.crop.w * v.videoWidth) / (dance.crop.h * v.videoHeight))
+            setVideoSize({ w: v.videoWidth, h: v.videoHeight })
           }}
         />
-        {desktop && (
-          <nav className="desk-frame__tools" aria-label="Tools">
-            <GlassButton icon="sound" label="Sound" size={36} iconSize={18} className={popover === 'sound' ? 'is-open' : ''} aria-expanded={popover === 'sound'} onClick={() => togglePopover('sound')} />
-            <GlassButton icon="mirror" label="Mirror" size={36} iconSize={18} className={dance.mirror ? 'is-on' : ''} aria-pressed={dance.mirror} onClick={toggleMirror} />
-            <GlassButton glyph={countInGlyph} label="Count-in" size={36} className={dance.countIn ? 'is-on' : ''} aria-pressed={dance.countIn} onClick={toggleCountIn} />
-            <GlassButton icon="frame" label="Edit frame" size={36} iconSize={18} onClick={onEditFrame} />
-          </nav>
-        )}
+        {countInOverlay}
+        {desktop && <div className="desk-frame__tools">{toolRow}</div>}
       </div>
 
       {desktop ? (
@@ -509,10 +423,10 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
             mode="learn"
             onBack={onBack}
             onMode={onRehearse}
-            right={<ShortcutsButton keys={SHORTCUTS} open={popover === 'keys'} onToggle={() => togglePopover('keys')} />}
+            right={<ShortcutsButton keys={SHORTCUTS} open={popover?.name === 'keys'} onToggle={toggleKeys} />}
           />
           <div className="desk-count">{count}</div>
-          {/* One row, ≤72px: bar position · transport · speed */}
+          {/* One row, ≤72px: bar position · transport · Got it */}
           <footer className="desk-dock">
             <div className="desk-dock__wave" data-coach="strip">
               <GlassButton icon="back" label="Back one beat" size={36} iconSize={16} onClick={() => step(-1)} />
@@ -524,18 +438,8 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
               <GlassButton icon="prev" label="Previous bar" size={40} iconSize={16} onClick={prevBar} />
               <PlayShutter playing={playing} onClick={togglePlay} />
               <GlassButton icon="next" label="Next bar" size={40} iconSize={16} onClick={nextBar} />
-              <GlassButton
-                icon="loop"
-                label={loopBar != null ? 'Stop looping' : 'Loop this bar'}
-                size={40}
-                iconSize={18}
-                className={loopBar != null ? 'is-on' : ''}
-                aria-pressed={loopBar != null}
-                onClick={toggleLoop}
-              />
             </div>
             <div className="desk-dock__end">
-              {speedPill}
               <Button className="got-it-pill" data-coach="got-it" onClick={gotIt}>
                 <Icon name="check" size={18} /> Got it
               </Button>
@@ -561,18 +465,11 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
               {layout === 'portrait' && <span className="learn__top-spacer" aria-hidden />}
             </header>
 
-            <div className="learn__middle">
-              {count}
-              {/* Portrait: labelled rail on the right. Landscape: compact
-                  icon row at the top right, camera-app style. */}
-              <nav className="learn__rail" aria-label="Tools">
-                <RailButton icon="sound" iconSize={railIcon} label="Sound" open={popover === 'sound'} onClick={() => togglePopover('sound')} />
-                <RailButton icon="mirror" iconSize={railIcon} label="Mirror" on={dance.mirror} onClick={toggleMirror} />
-                <RailButton glyph={countInGlyph} label="Count-in" on={dance.countIn} onClick={toggleCountIn} />
-                <RailButton icon="loop" iconSize={railIcon} label="Loop" on={loopBar != null} onClick={toggleLoop} />
-                <RailButton icon="frame" iconSize={railIcon} label="Frame" onClick={onEditFrame} />
-              </nav>
-            </div>
+            {/* Portrait: a row under the header. Landscape: top right,
+                camera-app style. */}
+            <div className="learn__tools">{toolRow}</div>
+
+            <div className="learn__middle">{count}</div>
 
             <footer className="learn__bottom">
               {/* Floats over the bottom of the video to leave it the space. */}
@@ -581,7 +478,6 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
                 <GlassButton icon="back" label="Back one beat" iconSize={18} onClick={() => step(-1)} />
                 <PlayShutter playing={playing} onClick={togglePlay} />
                 <GlassButton icon="back" flip label="Forward one beat" iconSize={18} onClick={() => step(1)} />
-                {speedPill}
                 {gotItButton()}
               </div>
               <div ref={stripRef} className="learn__strip" data-coach="strip">
@@ -666,7 +562,7 @@ function SpeedSlider({ speed, onChange }: { speed: number; onChange: (s: number)
 
 function SpeedPopover({ speed, onChange }: { speed: number; onChange: (s: number) => void }) {
   return (
-    <div className="popover popover--speed" role="dialog" aria-label="Speed">
+    <>
       <div className="popover__head mk-label-mono">
         <span>Speed</span>
         <span>Pitch kept</span>
@@ -680,7 +576,7 @@ function SpeedPopover({ speed, onChange }: { speed: number; onChange: (s: number
           </button>
         ))}
       </div>
-    </div>
+    </>
   )
 }
 
@@ -690,19 +586,9 @@ const SOUND_OPTIONS: { value: Sound; title: string; hint: string; disabled?: boo
   { value: 'music', title: 'Music only', hint: 'Just the track' },
 ]
 
-function SoundPopover({
-  sound,
-  onChange,
-  echo,
-  onEcho,
-}: {
-  sound: Sound
-  onChange: (s: Sound) => void
-  echo: boolean
-  onEcho: (on: boolean) => void
-}) {
+function SoundPopover({ sound, onChange }: { sound: Sound; onChange: (s: Sound) => void }) {
   return (
-    <div className="popover popover--sound" role="dialog" aria-label="Sound">
+    <>
       <div className="popover__head mk-label-mono">
         <span>Sound</span>
       </div>
@@ -723,13 +609,6 @@ function SoundPopover({
           </span>
         </button>
       ))}
-      <div className="sound-echo">
-        <span className="sound-option__text">
-          <span className="mk-body-strong">Your turn</span>
-          <span className="mk-body-small">Video does 1–4, you do 5–8</span>
-        </span>
-        <Toggle label="Your turn echo" on={echo} onChange={onEcho} />
-      </div>
-    </div>
+    </>
   )
 }

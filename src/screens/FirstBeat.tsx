@@ -8,7 +8,7 @@ import { decodeAudio } from '../lib/analyze'
 import { barLen, beatLen, COUNTS_PER_BAR } from '../lib/beat'
 import { beatsBetween, mediaToCtx } from '../lib/beatClock'
 import { audioContext, unlockAudio } from '../lib/countIn'
-import { peakMax, windowPeaks } from '../lib/peaks'
+import { snapOnset, windowPeaks } from '../lib/peaks'
 import { loadVoices, playVoices, type Scheduled, type VoiceName } from '../lib/voice'
 import type { Dance } from '../types'
 import './FirstBeat.css'
@@ -24,10 +24,12 @@ type Props = {
   step?: string
   onBack: () => void
   onSave: (offset: number) => void
+  /** The counts are wrong (not just the 1): set 1 and 8 by hand. */
+  onFixCounts: (audio: AudioBuffer | undefined) => void
 }
 
 /** Setup · First beat: confirm (or move) where count 1 lands. */
-export function FirstBeat({ dance, src, audio: given, step, onBack, onSave }: Props) {
+export function FirstBeat({ dance, src, audio: given, step, onBack, onSave, onFixCounts }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const areaRef = useRef<HTMLDivElement>(null)
   const [audio, setAudio] = useState<AudioBuffer | null>(given ?? null)
@@ -85,22 +87,7 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave }: Pr
     const r = areaRef.current!.getBoundingClientRect()
     return winStart + ((clientX - r.left) / r.width) * WINDOW
   }
-  const snap = (time: number) => {
-    if (!peaks) return time
-    const per = BUCKETS / WINDOW
-    const from = Math.max(0, Math.floor((time - SNAP - winStart) * per))
-    const to = Math.min(BUCKETS, Math.ceil((time + SNAP - winStart) * per))
-    // The beat is where a hit starts, not where it's loudest: take the
-    // steepest rise in level near where the 1 was dropped.
-    // Small rises (footsteps, noise) don't count: leave the 1 where it was put.
-    let best = -1
-    let bestRise = peakMax(peaks) * 0.25
-    for (let i = Math.max(1, from); i < to; i++) {
-      const rise = peaks[i] - peaks[i - 1]
-      if (rise > bestRise) [best, bestRise] = [i, rise]
-    }
-    return best < 0 ? time : winStart + best / per
-  }
+  const snap = (time: number) => (peaks ? snapOnset(peaks, winStart, WINDOW, time, SNAP) : time)
 
   // While the 1 is dragged, the video follows it so you can see the move
   // that lands there. One seek at a time: while the decoder is busy, keep
@@ -188,6 +175,7 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave }: Pr
           src={src}
           mirror={dance.mirror}
           crop={dance.crop}
+          videoSize={dance.videoSize}
           videoRef={videoRef}
           onLoadedMetadata={(v) => {
             v.currentTime = offset
@@ -251,6 +239,16 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave }: Pr
           </Button>
           <Button onClick={() => onSave(Math.round(offset * 1000) / 1000)}>Sounds right</Button>
         </div>
+        <button
+          type="button"
+          className="first-beat__fix mk-body-small"
+          onClick={() => {
+            stopPreview()
+            onFixCounts(audio ?? undefined)
+          }}
+        >
+          Counts wrong? Set them yourself
+        </button>
       </section>
     </main>
   )

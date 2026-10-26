@@ -1,4 +1,4 @@
-import type { Crop } from './lib/crop'
+import type { Crop, Size } from './lib/crop'
 
 // voice: spoken 1–8, video muted · music+voice: both (voice ~70%) · music: video only
 export type Sound = 'voice' | 'music+voice' | 'music'
@@ -18,6 +18,9 @@ export type Dance = {
   bars: number
   mirror: boolean
   crop: Crop
+  // Source pixel size, so the crop can be drawn before the video's metadata
+  // loads (iOS often doesn't load it until the first play).
+  videoSize?: Size
   orientation: 'vertical' | 'horizontal'
   speed: number // remembered per dance; new dances start at 0.5
   sound: Sound

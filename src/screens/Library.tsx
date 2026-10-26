@@ -15,12 +15,13 @@ type Props = {
   onRename: (id: string, name: string) => void
   onChangeFrame: (id: string) => void
   onChangeFirstBeat: (id: string) => void
+  onFixCounts: (id: string) => void
   onDelete: (id: string) => void
   onRestoreDemo: () => void
 }
 
 /** 01 Library: your dances, saved on this device. */
-export function Library({ dances, onOpen, onAdd, onRename, onChangeFrame, onChangeFirstBeat, onDelete, onRestoreDemo }: Props) {
+export function Library({ dances, onOpen, onAdd, onRename, onChangeFrame, onChangeFirstBeat, onFixCounts, onDelete, onRestoreDemo }: Props) {
   const input = useRef<HTMLInputElement>(null)
   const [menu, setMenu] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -113,6 +114,10 @@ export function Library({ dances, onOpen, onAdd, onRename, onChangeFrame, onChan
                   setMenu(null)
                   onChangeFirstBeat(d.id)
                 }}
+                onFixCounts={() => {
+                  setMenu(null)
+                  onFixCounts(d.id)
+                }}
                 onDelete={() => {
                   setMenu(null)
                   onDelete(d.id)
@@ -139,10 +144,11 @@ type CardProps = {
   onRename: (name: string) => void
   onChangeFrame: () => void
   onChangeFirstBeat: () => void
+  onFixCounts: () => void
   onDelete: () => void
 }
 
-function DanceCard({ dance: d, menuOpen, renaming, onOpen, onMenu, onCloseMenu, onStartRename, onRename, onChangeFrame, onChangeFirstBeat, onDelete }: CardProps) {
+function DanceCard({ dance: d, menuOpen, renaming, onOpen, onMenu, onCloseMenu, onStartRename, onRename, onChangeFrame, onChangeFirstBeat, onFixCounts, onDelete }: CardProps) {
   const thumb = useObjectUrl(d.thumb)
   const cardRef = useRef<HTMLLIElement>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -211,6 +217,9 @@ function DanceCard({ dance: d, menuOpen, renaming, onOpen, onMenu, onCloseMenu, 
           </button>
           <button type="button" role="menuitem" className="mk-body-strong" onClick={onChangeFirstBeat}>
             Change first beat <Icon name="sound" size={20} />
+          </button>
+          <button type="button" role="menuitem" className="mk-body-strong" onClick={onFixCounts}>
+            Fix counts <Icon name="edit" size={20} />
           </button>
           <button type="button" role="menuitem" className="mk-body-strong" onClick={onChangeFrame}>
             Change frame <Icon name="frame" size={20} />

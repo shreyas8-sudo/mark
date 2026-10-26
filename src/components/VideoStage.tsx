@@ -8,18 +8,20 @@ type Props = {
   crop: Crop
   videoRef: Ref<HTMLVideoElement>
   fit?: Fit
+  /** The clip's pixel size if already known, so the crop applies at once. */
+  videoSize?: Size
   /** Tap on the video itself (not on controls floating over it). */
   onTap?: () => void
   onLoadedMetadata?: (video: HTMLVideoElement) => void
 }
 
-export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', onTap, onLoadedMetadata }: Props) {
+export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', videoSize, onTap, onLoadedMetadata }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const ref = useVideoRef(src, videoRef)
   const [stage, setStage] = useState<Size | null>(null)
   // Keyed by src so a new clip never renders with the old clip's size.
   const [loaded, setLoaded] = useState<{ src: string; size: Size } | null>(null)
-  const video = loaded?.src === src ? loaded.size : null
+  const video = loaded?.src === src ? loaded.size : (videoSize ?? null)
 
   useLayoutEffect(() => {
     const el = stageRef.current!
@@ -56,7 +58,8 @@ export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', onTap, o
                 transform: mirror ? 'scaleX(-1)' : undefined,
               }
             : // Size unknown yet (iOS may not load metadata before the first
-              // play): fill the stage rather than show nothing.
+              // play, and older dances didn't store it): fill the stage
+              // rather than show nothing.
               { inset: 0, width: '100%', height: '100%', objectFit: 'cover', transform: mirror ? 'scaleX(-1)' : undefined }
         }
         onLoadedMetadata={(e) => {

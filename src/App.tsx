@@ -10,16 +10,20 @@ import { Library } from './screens/Library'
 import { Ready } from './screens/Ready'
 import { RehearseRun } from './screens/RehearseRun'
 import { RehearseSetup } from './screens/RehearseSetup'
+import { SetCounts } from './screens/SetCounts'
 import { SetupFrame } from './screens/SetupFrame'
 import type { Dance } from './types'
 
 // Library → Getting it ready → Setup · First beat → Setup · Frame → Learn.
+// With no beat found, Set your counts (1 and 8 by hand) replaces First beat;
+// First beat can also hand over to it when the counts are wrong.
 // Setup runs once per dance; after that a dance opens straight into Learn
 // (Frame and the library's ⋯ menu re-open the setup steps).
 type Screen =
   | { name: 'library' }
   | { name: 'ready'; file: File }
   | { name: 'firstBeat'; draft: Dance; audio?: AudioBuffer; from: 'ready' | 'library' }
+  | { name: 'counts'; draft: Dance; audio?: AudioBuffer; from: 'ready' | 'library'; noBeat: boolean }
   | { name: 'frame'; draft: Dance; from: 'ready' | 'learn' | 'library' }
   | { name: 'learn'; id: string }
   | { name: 'rehearse'; id: string; running: boolean }
@@ -56,7 +60,7 @@ export default function App() {
   const list = dances ?? []
   const dance =
     screen.name === 'learn' || screen.name === 'rehearse' ? list.find((d) => d.id === screen.id)
-    : screen.name === 'frame' || screen.name === 'firstBeat' ? screen.draft
+    : screen.name === 'frame' || screen.name === 'firstBeat' || screen.name === 'counts' ? screen.draft
     : undefined
   const src = useObjectUrl(dance?.video)
 
@@ -89,7 +93,13 @@ export default function App() {
           revokeObjectUrl(screen.file)
           setScreen({ name: 'library' })
         }}
-        onDone={(draft, audio) => setScreen({ name: 'firstBeat', draft, audio, from: 'ready' })}
+        onDone={(draft, audio, setCounts) =>
+          setScreen(
+            setCounts
+              ? { name: 'counts', draft, audio, from: 'ready', noBeat: true }
+              : { name: 'firstBeat', draft, audio, from: 'ready' },
+          )
+        }
       />
     )
   }
@@ -112,6 +122,37 @@ export default function App() {
           if (from === 'ready') setScreen({ name: 'frame', draft: { ...draft, ...grid }, from: 'ready' })
           else {
             update(draft.id, grid)
+            setScreen({ name: 'library' })
+          }
+        }}
+        onFixCounts={(decoded) => setScreen({ name: 'counts', draft, audio: decoded, from, noBeat: false })}
+      />
+    )
+  }
+
+  if (screen.name === 'counts' && src) {
+    const { draft, from, audio, noBeat } = screen
+    return (
+      <SetCounts
+        key={draft.id}
+        dance={draft}
+        src={src}
+        audio={audio}
+        noBeat={noBeat}
+        step={from === 'ready' ? 'Step 1 of 2' : undefined}
+        onBack={() => {
+          if (from === 'ready' && draft.video instanceof Blob) revokeObjectUrl(draft.video)
+          setScreen({ name: 'library' })
+        }}
+        onSave={(grid) => {
+          const counts = { ...grid, bars: barCount(draft.duration, grid) }
+          if (from === 'ready') setScreen({ name: 'frame', draft: { ...draft, ...counts }, from: 'ready' })
+          else {
+            // Bars past the new end, and a Rehearse range beyond it, no longer exist.
+            const learned = draft.learned.filter((b) => b <= counts.bars)
+            const clamp = (b: number) => Math.min(Math.max(1, b), counts.bars)
+            const run = { ...draft.run, barStart: clamp(draft.run.barStart), barEnd: clamp(draft.run.barEnd) }
+            update(draft.id, { ...counts, learned, run, currentBar: clamp(draft.currentBar) })
             setScreen({ name: 'library' })
           }
         }}
@@ -200,6 +241,10 @@ export default function App() {
       onChangeFirstBeat={(id) => {
         const d = list.find((x) => x.id === id)
         if (d) setScreen({ name: 'firstBeat', draft: d, from: 'library' })
+      }}
+      onFixCounts={(id) => {
+        const d = list.find((x) => x.id === id)
+        if (d) setScreen({ name: 'counts', draft: d, from: 'library', noBeat: false })
       }}
       onDelete={remove}
       onRestoreDemo={() => add({ ...DEMO, createdAt: Date.now() })}

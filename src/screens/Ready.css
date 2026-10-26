@@ -81,9 +81,8 @@
   background: var(--mk-accent-primary);
 }
 
-.ready__step[data-state='failed'] .ready__mark {
-  border: 0;
-  background: var(--mk-status-danger);
+.ready__step[data-state='manual'] .ready__mark {
+  border-color: var(--mk-accent-soft);
 }
 
 @keyframes ready-spin {

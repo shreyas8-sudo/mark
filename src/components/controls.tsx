@@ -27,34 +27,6 @@ export function GlassButton({
   )
 }
 
-/** Labelled control on the right-hand video rail. */
-export function RailButton({
-  icon,
-  glyph,
-  label,
-  open,
-  on,
-  iconSize = 28,
-  ...rest
-}: { icon?: IconName; glyph?: ReactNode; label: string; open?: boolean; on?: boolean; iconSize?: number } & ButtonProps) {
-  return (
-    <button
-      type="button"
-      className="rail-btn"
-      data-open={open || undefined}
-      data-on={on || undefined}
-      aria-pressed={on}
-      aria-expanded={open}
-      {...rest}
-    >
-      <span className="rail-btn__disc mk-glass">
-        {icon ? <Icon name={icon} size={iconSize} /> : <span className="glyph mk-label-mono">{glyph}</span>}
-      </span>
-      <span className="rail-btn__label mk-label-mono mk-over-video">{label}</span>
-    </button>
-  )
-}
-
 /** Primary play/pause: a plain solid circle. */
 export function PlayShutter({
   playing,

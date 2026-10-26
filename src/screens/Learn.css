@@ -30,7 +30,7 @@
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   /* minmax(0) so the long bar strip scrolls instead of widening the page */
   grid-template-columns: minmax(0, 1fr);
   padding:
@@ -53,13 +53,19 @@
   justify-content: space-between;
 }
 
-/* ---- Middle: big count on the left, tool rail on the right ---- */
+/* ---- Tool row: under the header (portrait) ---- */
+.learn__tools {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--mk-space-3);
+}
+
+/* ---- Middle: the running count at the side ---- */
 .learn__middle {
   position: relative;
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  padding-top: var(--mk-space-3);
+  padding-top: var(--mk-space-2);
   min-height: 0;
 }
 
@@ -67,13 +73,18 @@
   justify-items: start;
 }
 
-.learn__rail {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  align-self: center;
-  margin: 0 -2px 0 auto;
+/* ---- Count-in 5-6-7-8: big, in the centre of the video ---- */
+.count-in-centre {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.count-in-centre .big-count {
+  --count-size: clamp(140px, 38vmin, 260px);
 }
 
 /* ---- Bottom ---- */
@@ -91,31 +102,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: min(100%, 340px);
+  width: min(100%, 300px);
   margin: 0 auto var(--mk-space-2);
 }
 
-.speed-pill {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--mk-radius-full);
-  color: var(--mk-accent-soft);
-  font: 500 11px/1.3 var(--mk-font-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.speed-pill[data-open] {
-  background: var(--mk-control-solid);
-  color: var(--mk-text-inverse);
-}
-
-/* ---- Popovers ---- */
-.popover-dismiss {
-  position: absolute;
-  inset: 0;
-}
+/* ---- Popovers (placed by AnchoredPopover, under their button) ---- */
 
 .popover {
   position: absolute;
@@ -136,10 +127,7 @@
 }
 
 .popover--speed {
-  left: 50%;
-  bottom: calc(max(env(safe-area-inset-bottom), var(--mk-space-6)) + 210px);
-  width: min(300px, calc(100% - 2 * var(--mk-space-6)));
-  transform: translateX(-50%);
+  width: min(300px, calc(100vw - 2 * var(--mk-space-6)));
   align-items: center;
   gap: 14px;
 }
@@ -171,9 +159,7 @@
 }
 
 .popover--sound {
-  top: calc(max(env(safe-area-inset-top), var(--mk-space-4)) + 172px);
-  right: calc(max(env(safe-area-inset-right), 20px) + 56px);
-  width: min(250px, calc(100% - 100px));
+  width: min(250px, calc(100vw - 24px));
   gap: 6px;
 }
 
@@ -275,27 +261,16 @@
   display: contents;
 }
 
+.learn[data-layout='landscape'] .learn__tools {
+  grid-area: 1 / 1;
+  justify-self: end;
+  padding: 0;
+}
+
 .learn[data-layout='landscape'] .big-count {
   grid-area: 2 / 1;
   align-self: start;
   justify-self: start;
-}
-
-.learn[data-layout='landscape'] .learn__rail {
-  grid-area: 1 / 1;
-  justify-self: end;
-  flex-direction: row;
-  gap: 10px;
-  margin: 0;
-}
-
-.learn[data-layout='landscape'] .rail-btn__label {
-  display: none;
-}
-
-.learn[data-layout='landscape'] .rail-btn__disc {
-  width: 34px;
-  height: 34px;
 }
 
 .learn[data-layout='landscape'] .learn__strip {
@@ -313,18 +288,6 @@
   margin: 0;
 }
 
-.learn[data-layout='landscape'] .popover--speed {
-  top: 50%;
-  bottom: auto;
-  left: calc(50% - 40px);
-  transform: translate(-50%, -50%);
-}
-
-.learn[data-layout='landscape'] .popover--sound {
-  top: 64px;
-  right: 120px;
-}
-
 .learn__top-spacer {
   width: 40px;
 }
@@ -334,16 +297,9 @@
   user-select: auto;
 }
 
-.learn[data-layout='desktop'] .popover--speed {
-  left: auto;
-  right: 32px;
-  bottom: calc(var(--dock-h) + 12px);
-  transform: none;
-}
-
-.learn[data-layout='desktop'] .popover--sound {
-  top: 132px;
-  right: calc(50% - var(--frame-w) / 2 + 12px);
+/* The tool row floats over the top of the frame, z above the count-in. */
+.learn[data-layout='desktop'] .desk-frame__tools {
+  z-index: 2;
 }
 
 /* ---- Got it ✓ ---- */
@@ -446,20 +402,6 @@
   border-radius: var(--mk-radius-full);
   background: var(--mk-accent-primary);
   color: var(--mk-text-inverse);
-}
-
-/* ---- "Your turn" toggle in the Sound popover ---- */
-.sound-echo {
-  display: flex;
-  align-items: center;
-  gap: var(--mk-space-3);
-  margin-top: var(--mk-space-1);
-  padding-top: var(--mk-space-3);
-  border-top: 1px solid var(--mk-glass-stroke);
-}
-
-.sound-echo .sound-option__text {
-  flex: 1;
 }
 
 /* ---- Speed-up nudge ---- */

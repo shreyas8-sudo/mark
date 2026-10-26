@@ -13,10 +13,6 @@ type Options = {
   volume: number
   /** Video time the playhead jumps back from (loop end / run range end). */
   stopAt?: number | null
-  /** Echo mode: say "your turn" in place of "four". */
-  yourTurnOnFour?: boolean
-  /** A beat (video time) someone else speaks, e.g. the echo restart's "1". */
-  skipAt?: number | null
 }
 
 /**
@@ -27,13 +23,11 @@ type Options = {
  */
 export function useVoiceCounts(
   videoRef: RefObject<HTMLVideoElement | null>,
-  { enabled, grid, volume, stopAt, yourTurnOnFour = false, skipAt }: Options,
+  { enabled, grid, volume, stopAt }: Options,
 ) {
   const stopAtRef = useRef(stopAt)
-  const skipAtRef = useRef(skipAt)
   useEffect(() => {
     stopAtRef.current = stopAt
-    skipAtRef.current = skipAt
   })
 
   const { bpm, offset } = grid
@@ -62,11 +56,8 @@ export function useVoiceCounts(
       for (const b of beatsBetween(g, from, to)) {
         if (queued.has(b.beatIndex)) continue
         if (settling && b.mediaTime > now + 0.05 * rate) continue
-        const skip = skipAtRef.current
-        if (skip != null && Math.abs(b.mediaTime - skip) < 0.01) continue
         const at = mediaToCtx(b.mediaTime, now, ctx.currentTime, rate)
-        const name: VoiceName = yourTurnOnFour && b.count === 4 ? 'your-turn' : (String(b.count) as VoiceName)
-        queued.set(b.beatIndex, playVoices(clips, [{ name, at }], volume))
+        queued.set(b.beatIndex, playVoices(clips, [{ name: String(b.count) as VoiceName, at }], volume))
       }
       // Forget counts that have played, so a loop's next lap can queue them again.
       for (const [i] of queued) if (offset + i * (60 / bpm) < now - 0.5) queued.delete(i)
@@ -95,5 +86,5 @@ export function useVoiceCounts(
       video.removeEventListener('playing', onPlaying)
       video.removeEventListener('seeked', tick)
     }
-  }, [videoRef, enabled, bpm, offset, volume, yourTurnOnFour])
+  }, [videoRef, enabled, bpm, offset, volume])
 }

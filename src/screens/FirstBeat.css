@@ -170,3 +170,49 @@
   background: var(--mk-accent-soft);
   opacity: 0.6;
 }
+
+/* ---- Set your counts: 1 and 8 on a pannable window ---- */
+.set-counts__wave-row {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-2);
+}
+
+.set-counts__wave-row .glass-btn {
+  background: var(--mk-bg-raised);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.set-counts__wave-row .glass-btn:disabled {
+  opacity: 0.4;
+}
+
+.set-counts__wave {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The mark not being placed right now */
+.beat-wave__marker[data-inactive] {
+  background: var(--mk-accent-soft);
+  opacity: 0.7;
+}
+
+.beat-wave__marker[data-inactive] .beat-wave__flag {
+  background: var(--mk-accent-soft);
+}
+
+.first-beat__sheet > .first-beat__fix {
+  align-self: center;
+  width: auto;
+  padding: var(--mk-space-1) var(--mk-space-2);
+  color: var(--mk-accent-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.first-beat__controls .first-beat__preview {
+  white-space: nowrap;
+  padding-inline: var(--mk-space-4);
+}

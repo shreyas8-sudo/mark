@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { echoHandover, followLearned, lastLearned, markLearned, nextSpeed, unmarkLearned } from './learn'
+import { followLearned, lastLearned, markLearned, nextSpeed, unmarkLearned } from './learn'
 
 const run = { barStart: 1, barEnd: 1, countIn: true, loops: [] }
 
@@ -39,11 +39,5 @@ describe('speed nudge', () => {
     expect(nextSpeed(0.6)).toBe(0.75)
     expect(nextSpeed(1)).toBe(1.25)
     expect(nextSpeed(1.25)).toBeNull()
-  })
-})
-
-describe('echo', () => {
-  it('hands over to the dancer on count 5', () => {
-    expect(echoHandover(10, 0.5)).toBe(12)
   })
 })

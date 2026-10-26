@@ -1,0 +1,36 @@
+/* ---- Tool row (Learn: phone and laptop) ---- */
+.tool-row {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-2);
+  pointer-events: auto;
+}
+
+/* Text in a tool button ("5678", "0.5×") */
+.tool-btn .glyph {
+  font: 500 11px/1 var(--mk-font-mono);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-btn.is-on {
+  box-shadow: inset 0 0 0 2px var(--mk-accent-soft);
+}
+
+.tool-btn.is-open {
+  background: var(--mk-control-solid);
+  color: var(--mk-text-inverse);
+}
+
+/* ---- Popover anchored under its button ---- */
+.anchored-dismiss {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+}
+
+.popover.anchored-popover {
+  position: fixed;
+  z-index: 31;
+  max-width: calc(100vw - 24px);
+}
