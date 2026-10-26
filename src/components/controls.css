@@ -70,21 +70,6 @@ button:focus-visible {
   opacity: 0.45;
 }
 
-/* ---- Count badge ---- */
-.count-badge {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  padding: var(--mk-space-2) var(--mk-space-4);
-  border-radius: var(--mk-radius-lg);
-  color: var(--mk-text-primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.count-badge__sub {
-  color: var(--mk-accent-soft);
-}
-
 /* ---- Play shutter ---- */
 .shutter {
   display: grid;
@@ -140,6 +125,10 @@ button:focus-visible {
   inset: 0;
   overflow: hidden;
   background: var(--mk-bg-base);
+}
+
+.video-stage[data-tappable] {
+  cursor: pointer;
 }
 
 .video-stage__video {
@@ -341,18 +330,19 @@ button:focus-visible {
 }
 
 /* Root of a laptop / TV screen. --ar (the cropped video's aspect) is set
-   inline; the frame and both side panels size themselves from it. */
+   inline. v2: no side panels; the video takes the full height between the
+   top bar and a single ≤72px dock, leaving room beside it for the count. */
 .desk {
-  --dock-h: 150px;
-  --frame-h: calc(100dvh - 88px - var(--dock-h) - 20px);
-  --frame-w: min(52vw, calc(var(--frame-h) * var(--ar, 0.5625)));
+  --top-h: 80px;
+  --dock-h: 72px;
+  --frame-h: calc(100dvh - var(--top-h) - var(--dock-h) - 24px);
+  --frame-w: min(calc(100vw - 480px), calc(var(--frame-h) * var(--ar, 0.5625)));
 }
 
-/* Video at its real (cropped) aspect, centred between top bar and dock. */
 .desk-frame {
   position: absolute;
   z-index: 1;
-  top: 88px;
+  top: var(--top-h);
   left: 50%;
   width: var(--frame-w);
   aspect-ratio: var(--ar, 0.5625);
@@ -363,58 +353,80 @@ button:focus-visible {
   background: var(--mk-bg-base);
 }
 
-.desk-panel {
+/* Small glass tools floating over the top-right of the video. */
+.desk-frame__tools {
   position: absolute;
-  top: 88px;
-  width: min(300px, calc((100vw - var(--frame-w)) / 2 - 72px));
-  z-index: 1;
-  max-height: calc(100dvh - 88px - var(--dock-h) - 20px);
-  overflow-y: auto;
+  top: 12px;
+  right: 12px;
   display: flex;
-  flex-direction: column;
-  padding: 18px 20px 20px;
-  border-radius: 24px;
-  color: var(--mk-text-primary);
+  gap: var(--mk-space-2);
 }
 
-.desk-panel--left {
-  right: calc(50% + var(--frame-w) / 2 + 40px);
+.glass-btn.is-on {
+  box-shadow: inset 0 0 0 2px var(--mk-accent-soft);
 }
 
-.desk-panel--right {
-  left: calc(50% + var(--frame-w) / 2 + 40px);
+.glass-btn.is-open {
+  background: var(--mk-control-solid);
+  color: var(--mk-text-inverse);
 }
 
-.desk-panel__label {
-  color: var(--mk-text-secondary);
+/* The big count sits beside the frame, vertically centred on it. */
+.desk-count {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--top-h) + var(--frame-h) / 2);
+  right: calc(50% + var(--frame-w) / 2 + 32px);
+  transform: translateY(-50%);
+}
+
+.desk-count .big-count {
+  --count-size: clamp(160px, 14vw, 200px);
 }
 
 .desk-dock {
   position: absolute;
   inset: auto 0 0;
   z-index: 2;
-  min-height: var(--dock-h);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 14px;
-  padding: 14px 32px 18px;
+  height: var(--dock-h);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--mk-space-6);
+  padding: 0 32px;
   border-top: 1px solid var(--mk-border-subtle);
   background: var(--mk-bg-surface);
   color: var(--mk-text-primary);
 }
 
-.desk-dock__row {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+.desk-dock__wave {
+  display: flex;
   align-items: center;
-  gap: var(--mk-space-4);
+  gap: var(--mk-space-3);
+  min-width: 0;
+}
+
+.desk-dock__wave > :nth-child(3) {
+  flex: 1;
+  min-width: 0;
+}
+
+.desk-dock__bar {
+  color: var(--mk-accent-soft);
+  white-space: nowrap;
 }
 
 .desk-dock__transport {
   display: flex;
   align-items: center;
-  gap: var(--mk-space-4);
+  gap: var(--mk-space-3);
+}
+
+.desk-dock__end {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--mk-space-3);
 }
 
 .desk-dock .glass-btn {
@@ -423,14 +435,20 @@ button:focus-visible {
   backdrop-filter: none;
 }
 
+.desk-dock .glass-btn.is-on {
+  background: var(--mk-accent-primary);
+  color: var(--mk-text-inverse);
+}
+
 .desk-dock .shutter {
-  width: 66px;
-  height: 66px;
+  width: 56px;
+  height: 56px;
+  padding: 3px;
 }
 
 .desk-dock .shutter__core {
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
 }
 
 .mk-kbd {
@@ -441,4 +459,50 @@ button:focus-visible {
   background: var(--mk-glass-fill-strong);
   color: var(--mk-text-primary);
   text-align: center;
+}
+
+.desk-top__right {
+  margin-left: auto;
+}
+
+/* ---- `?` shortcuts popover ---- */
+.shortcuts {
+  position: relative;
+}
+
+.shortcuts__btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--mk-radius-full);
+  color: var(--mk-text-primary);
+}
+
+.shortcuts__pop {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: max-content;
+  padding: var(--mk-space-4) 18px;
+  border-radius: 20px;
+  background: var(--mk-overlay-scrim-strong);
+  -webkit-backdrop-filter: blur(var(--mk-glass-blur)) saturate(160%);
+  backdrop-filter: blur(var(--mk-glass-blur)) saturate(160%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.shortcuts__pop p {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  margin: 0;
+  font: 400 13px/1.4 var(--mk-font-sans);
+  color: var(--mk-text-secondary);
+}
+
+.shortcuts__pop .popover__head {
+  color: var(--mk-text-secondary);
 }

@@ -317,14 +317,6 @@
   -webkit-user-select: none;
 }
 
-.rehearse-run__dim {
-  position: absolute;
-  inset: 0;
-  background: var(--mk-overlay-scrim);
-  opacity: 0.35;
-  pointer-events: none;
-}
-
 .rehearse-run__scrim {
   position: absolute;
   inset: auto 0 0;
@@ -393,26 +385,26 @@
 
 .rehearse-run__middle {
   display: grid;
-  place-items: center;
+  grid-template-areas: 'stack';
   min-height: 0;
 }
 
-.count-in {
-  color: var(--mk-accent-primary);
-  animation: count-pop 180ms ease-out;
+.rehearse-run__middle > * {
+  grid-area: stack;
 }
 
-@keyframes count-pop {
-  from {
-    transform: scale(0.8);
-    opacity: 0.4;
-  }
+.rehearse-run__middle .big-count {
+  justify-self: end;
+  align-self: start;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .count-in {
-    animation: none;
-  }
+.rehearse-run__middle .run-done {
+  place-self: center;
+}
+
+/* Portrait: the video takes everything above the loop chips + transport. */
+.rehearse-run[data-layout='portrait'] .rehearse-run__stage {
+  bottom: var(--controls-h, 0px);
 }
 
 .run-done {
@@ -512,64 +504,10 @@
   pointer-events: auto;
 }
 
-.keys-panel {
-  gap: 10px;
-  width: auto;
-}
-
-.keys-panel p {
-  display: flex;
-  align-items: center;
-  gap: var(--mk-space-3);
-  margin: 0;
-  font: 400 13px/1.4 var(--mk-font-sans);
-  color: var(--mk-text-secondary);
-  white-space: nowrap;
-}
-
-.run-panel {
-  gap: 14px;
-}
-
-.run-panel__row {
-  display: flex;
-  align-items: center;
-  gap: var(--mk-space-3);
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: var(--mk-glass-fill);
-  color: var(--mk-text-primary);
-  text-align: left;
-}
-
-.run-panel__row .mk-data-mono {
-  color: var(--mk-text-tertiary);
-}
-
-.run-panel__row .mk-body-strong {
-  flex: 1;
-}
-
-.run-panel__row .mk-label-mono {
-  color: var(--mk-text-secondary);
-}
-
-.run-panel__row[data-active] {
-  background: var(--mk-accent-primary);
-}
-
-.run-panel__row[data-active] > * {
-  color: var(--mk-text-inverse);
-}
-
-.run-panel .mk-body-small {
-  margin: 0;
-  color: var(--mk-text-secondary);
-}
-
 .beat-timeline {
   display: flex;
   gap: 4px;
+  min-width: 0;
 }
 
 .beat-timeline__bar {
@@ -577,7 +515,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 
 .beat-timeline__bar .mk-label-mono {
@@ -617,11 +555,6 @@
   align-items: center;
   gap: 10px;
   color: var(--mk-text-primary);
-}
-
-.run-status__end {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .end-btn--dock {

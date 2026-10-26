@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { Ambient } from '../components/Ambient'
-import { Button, DeskTopBar, GlassButton, Kbd, PlayShutter } from '../components/controls'
+import { BigCount } from '../components/BigCount'
+import { Button, DeskTopBar, GlassButton, PlayShutter, ShortcutsButton } from '../components/controls'
 import { Icon } from '../components/Icon'
 import { VideoStage } from '../components/VideoStage'
 import { useKeys } from '../hooks/useKeys'
@@ -119,13 +120,32 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
   const prev = () => dispatch({ type: 'prev' })
   const next = () => dispatch({ type: 'next' })
 
-  useKeys({ ' ': togglePlay, r: restart, '[': prev, ']': next, Escape: onEnd })
+  const [keysOpen, setKeysOpen] = useState(false)
+  useKeys({ ' ': togglePlay, r: restart, '[': prev, ']': next, '?': () => setKeysOpen((o) => !o), Escape: onEnd })
 
-  const countInOverlay = shown != null && (
-    <div className="count-in mk-count-display mk-over-video" aria-live="assertive">
-      {shown}
-    </div>
-  )
+  // Phone portrait: the video gets everything above the controls.
+  const footerRef = useRef<HTMLElement>(null)
+  const [controlsH, setControlsH] = useState(0)
+  useLayoutEffect(() => {
+    const el = footerRef.current
+    if (!el || layout !== 'portrait') return setControlsH(0)
+    // From the top of the controls to the bottom of the screen (includes
+    // the safe-area padding below them).
+    const measure = () => setControlsH(window.innerHeight - el.getBoundingClientRect().top)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [layout])
+
+  // The big count: 5-6-7-8 in the accent during the count-in, then the
+  // dance's own counts while the bars play.
+  const pos = position(t, dance)
+  const count =
+    shown != null ? <BigCount count={shown} beat={shown} countIn />
+    : state.phase === 'playing' ? <BigCount count={pos.count} beat={pos.beatIndex} />
+    : <BigCount count={null} beat={0} />
+
   const doneCard = state.phase === 'done' && (
     <div className="run-done">
       <p className="mk-heading-l">Nice run.</p>
@@ -139,7 +159,7 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
       className={`rehearse-run${desktop ? ' desk' : ''}`}
       data-mode="rehearse"
       data-layout={layout}
-      style={aspect ? ({ '--ar': aspect } as CSSProperties) : undefined}
+      style={{ ...(aspect ? { '--ar': aspect } : {}), '--controls-h': `${controlsH}px` } as CSSProperties}
     >
       {/* Same position in every layout, so the video never remounts. */}
       <div className={desktop ? 'desk-frame' : 'rehearse-run__stage'}>
@@ -147,15 +167,12 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
           src={src}
           mirror={dance.mirror}
           crop={dance.crop}
+          fit="contain"
           videoRef={videoRef}
+          onTap={togglePlay}
           onLoadedMetadata={(v) => setAspect((dance.crop.w * v.videoWidth) / (dance.crop.h * v.videoHeight))}
         />
-        {desktop && (
-          <div className="desk-frame__center">
-            {countInOverlay}
-            {doneCard}
-          </div>
-        )}
+        {desktop && <div className="desk-frame__center">{doneCard}</div>}
       </div>
 
       {desktop ? (
@@ -167,43 +184,10 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
             mode="rehearse"
             onBack={onBack}
             onMode={onLearn}
+            right={<ShortcutsButton keys={SHORTCUTS} open={keysOpen} onToggle={() => setKeysOpen((o) => !o)} />}
           />
-          <aside className="desk-panel desk-panel--left mk-glass keys-panel" aria-label="Keyboard">
-            <span className="desk-panel__label mk-label-mono">Keyboard</span>
-            <p><Kbd>Space</Kbd> Pause / play</p>
-            <p><Kbd>R</Kbd> Restart loop</p>
-            <p><Kbd>[ ]</Kbd> Prev / next loop</p>
-            <p><Kbd>Esc</Kbd> End rehearsal</p>
-          </aside>
-          <aside className="desk-panel desk-panel--right mk-glass run-panel" aria-label="This run">
-            <span className="desk-panel__label mk-label-mono">This run</span>
-            {run.loops.map((l, i) => {
-              const status =
-                state.phase === 'done' || (active && i < active.loop) ? 'Done'
-                : active?.loop === i ? (active.paused ? 'Paused' : active.phase === 'countIn' ? 'Count-in' : 'Playing')
-                : active && i === active.loop + 1 ? 'Next'
-                : ''
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  className="run-panel__row"
-                  data-active={active?.loop === i || undefined}
-                  onClick={() => dispatch({ type: 'goto', loop: i })}
-                >
-                  <span className="mk-data-mono">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="mk-body-strong">
-                    {formatSpeed(l.speed)}
-                    {l.plays > 1 && ` × ${l.plays}`}
-                  </span>
-                  <span className="mk-label-mono">{status}</span>
-                </button>
-              )
-            })}
-            <p className="mk-body-small">
-              Count-in {run.countIn ? 'on' : 'off'} · bars {run.barStart} → {run.barEnd}
-            </p>
-          </aside>
+          <div className="desk-count">{count}</div>
+          {/* One row, ≤72px: bar timeline · transport · loop pill · End */}
           <footer className="desk-dock">
             <BeatTimeline
               barStart={run.barStart}
@@ -212,29 +196,26 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
               t={state.phase === 'playing' ? t : null}
               grid={dance}
             />
-            <div className="desk-dock__row">
+            <div className="desk-dock__transport">
+              <GlassButton icon="prev" label="Previous loop" size={40} iconSize={16} onClick={prev} />
+              <GlassButton icon="restart" label="Restart loop" size={40} iconSize={18} onClick={restart} />
+              <PlayShutter playing={playing} onClick={togglePlay} />
+              <GlassButton icon="next" label="Next loop" size={40} iconSize={16} onClick={next} />
+            </div>
+            <div className="desk-dock__end">
               <span className="run-status mk-label-mono" aria-live="polite">
                 {statusDot}
                 {pill}
               </span>
-              <div className="desk-dock__transport">
-                <GlassButton icon="prev" label="Previous loop" size={48} iconSize={18} onClick={prev} />
-                <GlassButton icon="restart" label="Restart loop" size={48} iconSize={20} onClick={restart} />
-                <PlayShutter playing={playing} iconSize={26} onClick={togglePlay} />
-                <GlassButton icon="next" label="Next loop" size={48} iconSize={18} onClick={next} />
-              </div>
-              <div className="run-status__end">
-                <button type="button" className="end-btn end-btn--dock mk-body-strong" onClick={onEnd}>
-                  <Icon name="close" size={18} />
-                  End rehearsal
-                </button>
-              </div>
+              <button type="button" className="end-btn end-btn--dock mk-body-strong" onClick={onEnd}>
+                <Icon name="close" size={18} />
+                End
+              </button>
             </div>
           </footer>
         </>
       ) : (
         <>
-          <div className="rehearse-run__dim" />
           <div className="rehearse-run__scrim" />
 
           <div className="rehearse-run__ui">
@@ -256,11 +237,11 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
             </div>
 
             <div className="rehearse-run__middle">
-              {countInOverlay}
+              {count}
               {doneCard}
             </div>
 
-            <footer className="rehearse-run__bottom">
+            <footer ref={footerRef} className="rehearse-run__bottom">
               <div className="loop-chips" role="tablist" aria-label="Loops">
                 {run.loops.map((l, i) => (
                   <button
@@ -299,6 +280,14 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
     </div>
   )
 }
+
+const SHORTCUTS: [string, string][] = [
+  ['Space', 'Pause / play'],
+  ['R', 'Restart loop'],
+  ['[ ]', 'Prev / next loop'],
+  ['Esc', 'End rehearsal'],
+  ['?', 'Show shortcuts'],
+]
 
 /** Laptop: one segment per beat across the bar range, filled as it plays. */
 function BeatTimeline({

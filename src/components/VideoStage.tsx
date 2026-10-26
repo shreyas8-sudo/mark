@@ -7,10 +7,12 @@ type Props = {
   crop: Crop
   videoRef: Ref<HTMLVideoElement>
   fit?: Fit
+  /** Tap on the video itself (not on controls floating over it). */
+  onTap?: () => void
   onLoadedMetadata?: (video: HTMLVideoElement) => void
 }
 
-export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', onLoadedMetadata }: Props) {
+export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', onTap, onLoadedMetadata }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const [stage, setStage] = useState<Size | null>(null)
   // Keyed by src so a new clip never renders with the old clip's size.
@@ -34,7 +36,8 @@ export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', onLoaded
   const box = stage && video ? videoBox(stage, video, crop, mirror, fit) : null
 
   return (
-    <div ref={stageRef} className="video-stage">
+    // The tap is a convenience; Play/Pause stays a visible, labelled button.
+    <div ref={stageRef} className="video-stage" data-tappable={onTap ? true : undefined} onClick={onTap}>
       <video
         ref={videoRef}
         src={src}

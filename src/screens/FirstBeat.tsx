@@ -102,14 +102,42 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave }: Pr
     return best < 0 ? time : winStart + best / per
   }
 
+  // While the 1 is dragged, the video follows it so you can see the move
+  // that lands there. One seek at a time: while the decoder is busy, keep
+  // only the latest position and go there when the current seek lands.
+  const scrubTo = useRef<number | null>(null)
+  const scrub = (time: number) => {
+    const v = videoRef.current
+    if (!v) return
+    if (v.seeking) {
+      scrubTo.current = time
+      return
+    }
+    v.currentTime = time
+    v.addEventListener(
+      'seeked',
+      () => {
+        const next = scrubTo.current
+        scrubTo.current = null
+        if (next != null) scrub(next)
+      },
+      { once: true },
+    )
+  }
+
   const onPointerDown = (e: PointerEvent) => {
     e.currentTarget.setPointerCapture(e.pointerId)
     dragging.current = true
     stopPreview()
-    setOffset(Math.max(0, timeAt(e.clientX)))
+    const time = Math.max(0, timeAt(e.clientX))
+    setOffset(time)
+    scrub(time)
   }
   const onPointerMove = (e: PointerEvent) => {
-    if (dragging.current) setOffset(Math.max(0, Math.min(timeAt(e.clientX), winEnd)))
+    if (!dragging.current) return
+    const time = Math.max(0, Math.min(timeAt(e.clientX), winEnd))
+    setOffset(time)
+    scrub(time)
   }
   const onPointerUp = (e: PointerEvent) => {
     if (!dragging.current) return

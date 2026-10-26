@@ -53,15 +53,6 @@ export function RailButton({
   )
 }
 
-export function CountBadge({ count, sub }: { count: ReactNode; sub: ReactNode }) {
-  return (
-    <div className="count-badge mk-glass" aria-live="off">
-      <span className="mk-count-badge">{count}</span>
-      <span className="count-badge__sub mk-label-mono">{sub}</span>
-    </div>
-  )
-}
-
 /** Primary play/pause, styled after the camera shutter. */
 export function PlayShutter({
   playing,
@@ -168,12 +159,14 @@ export function DeskTopBar({
   mode,
   onBack,
   onMode,
+  right,
 }: {
   title: string
   meta: string
   mode: 'learn' | 'rehearse'
   onBack: () => void
   onMode: (mode: 'learn' | 'rehearse') => void
+  right?: ReactNode
 }) {
   return (
     <header className="desk-top">
@@ -188,10 +181,32 @@ export function DeskTopBar({
       <div className="desk-top__mode">
         <ModeCarousel mode={mode} onChange={(m) => m !== mode && onMode(m)} />
       </div>
+      {right && <div className="desk-top__right">{right}</div>}
     </header>
   )
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
   return <kbd className="mk-kbd mk-label-mono">{children}</kbd>
+}
+
+/** The `?` keyboard-shortcuts popover on laptop layouts. */
+export function ShortcutsButton({ keys, open, onToggle }: { keys: [string, string][]; open: boolean; onToggle: () => void }) {
+  return (
+    <div className="shortcuts">
+      <button type="button" className="shortcuts__btn mk-glass mk-body-strong" aria-label="Keyboard shortcuts" aria-expanded={open} onClick={onToggle}>
+        ?
+      </button>
+      {open && (
+        <div className="shortcuts__pop popover" role="dialog" aria-label="Keyboard shortcuts">
+          <span className="popover__head mk-label-mono">Keyboard</span>
+          {keys.map(([k, what]) => (
+            <p key={k}>
+              <Kbd>{k}</Kbd> {what}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
