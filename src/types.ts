@@ -1,6 +1,7 @@
 import type { Crop } from './lib/crop'
 
-export type Sound = 'music' | 'music+counts' | 'counts'
+// voice: spoken 1–8, video muted · music+voice: both (voice ~70%) · music: video only
+export type Sound = 'voice' | 'music+voice' | 'music'
 
 export type Loop = { speed: number; plays: number }
 
@@ -18,7 +19,8 @@ export type Dance = {
   mirror: boolean
   crop: Crop
   orientation: 'vertical' | 'horizontal'
-  lastSpeed: number
+  speed: number // remembered per dance; new dances start at 0.5
   sound: Sound
-  run: { barStart: number; barEnd: number; countIn: boolean; loops: Loop[] }
+  countIn: boolean // Learn: 5-6-7-8 before playing from pause
+  run: { barStart: number; barEnd: number; countIn: boolean; voice?: boolean; loops: Loop[] }
 }

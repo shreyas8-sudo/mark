@@ -17,8 +17,9 @@ export const DEMO: Dance = {
   mirror: true,
   crop: FULL_FRAME,
   orientation: 'vertical',
-  lastSpeed: 1,
-  sound: 'music+counts',
+  speed: 0.5,
+  sound: 'voice',
+  countIn: true,
   run: {
     barStart: 1,
     barEnd: 4,

@@ -86,7 +86,7 @@ export function Ready({ file, onCancel, onDone }: Props) {
       mirror: true,
       crop: FULL_FRAME,
       orientation: size && size.w > size.h ? 'horizontal' : 'vertical',
-      lastSpeed: 1,
+      speed: 0.5,
     }, analysis.audio)
   }
 

@@ -39,6 +39,12 @@ button:focus-visible {
   transform: scale(0.94);
 }
 
+/* Text in place of an icon (e.g. the count-in "5–8") */
+.glyph {
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 /* ---- Rail button ---- */
 .rail-btn {
   display: flex;

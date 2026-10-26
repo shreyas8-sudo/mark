@@ -85,6 +85,14 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
           <Toggle label="Count-in" on={run.countIn} onChange={(countIn) => onChange({ ...run, countIn })} />
         </div>
 
+        <div className="rehearse-card">
+          <div className="rehearse-card__text">
+            <span className="mk-body-strong">Spoken counts</span>
+            <span className="mk-body-small">Voice says 1–8 over the music</span>
+          </div>
+          <Toggle label="Spoken counts" on={!!run.voice} onChange={(voice) => onChange({ ...run, voice })} />
+        </div>
+
         <div className="rehearse-setup__group">
           <span className="rehearse-setup__label mk-label-mono">Loops</span>
           {run.loops.map((loop, i) => (

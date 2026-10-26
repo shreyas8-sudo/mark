@@ -9,7 +9,9 @@ import { useKeys } from '../hooks/useKeys'
 import { useLayout } from '../hooks/useLayout'
 import { usePeaks } from '../hooks/usePeaks'
 import { usePlayhead } from '../hooks/usePlayhead'
-import { barStart, loopTarget, position, stepBeat, type Grid } from '../lib/beat'
+import { useVoiceCounts } from '../hooks/useVoiceCounts'
+import { barEnd, barStart, beatLen, loopTarget, position, stepBeat, type Grid } from '../lib/beat'
+import { countIn as playCountIn, unlockAudio } from '../lib/countIn'
 import { formatSpeed, SPEED_MAX, SPEED_MIN } from '../lib/speed'
 import type { Dance, Sound } from '../types'
 import './Learn.css'
@@ -23,6 +25,7 @@ const SHORTCUTS: [string, string][] = [
   ['[ ]', 'Prev / next bar'],
   ['L', 'Loop this bar'],
   ['M', 'Mirror'],
+  ['C', 'Count-in on / off'],
   ['F', 'Edit frame'],
   ['?', 'Show shortcuts'],
 ]
@@ -50,6 +53,8 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
   const [loopBar, setLoopBar] = useState<number | null>(null)
   const [popover, setPopover] = useState<Popover>(null)
   const [controlsH, setControlsH] = useState(0)
+  const [countingIn, setCountingIn] = useState<number | null>(null) // 5–8 on screen
+  const cancelCountIn = useRef<(() => void) | null>(null)
   const peaks = usePeaks(dance, onPeaks)
 
   const { t, playing } = usePlayhead(videoRef, (video) => {
@@ -64,8 +69,23 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
 
   useEffect(() => {
     const v = videoRef.current
-    if (v) v.playbackRate = dance.lastSpeed
-  }, [dance.lastSpeed])
+    if (v) v.playbackRate = dance.speed
+  }, [dance.speed])
+
+  // Voice counts mutes the track; the other modes play it.
+  useEffect(() => {
+    const v = videoRef.current
+    if (v) v.muted = dance.sound === 'voice'
+  }, [dance.sound])
+
+  useVoiceCounts(videoRef, {
+    enabled: dance.sound !== 'music',
+    grid,
+    volume: dance.sound === 'voice' ? 1 : 0.7,
+    stopAt: loopBar != null ? barEnd(loopBar, grid) : null,
+  })
+
+  useEffect(() => () => cancelCountIn.current?.(), [])
 
   // Phone (portrait and landscape): the video gets everything above the bar
   // strip, so the strip never covers the dancer's feet; the transport floats
@@ -86,11 +106,28 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     const v = videoRef.current
     if (v) v.currentTime = Math.max(0, Math.min(time, duration))
   }
+  const stopCountIn = () => {
+    cancelCountIn.current?.()
+    cancelCountIn.current = null
+    setCountingIn(null)
+  }
   const togglePlay = () => {
     const v = videoRef.current
     if (!v) return
-    if (v.paused) v.play().catch(() => {})
-    else v.pause()
+    if (cancelCountIn.current) return stopCountIn() // tap during 5-6-7-8 cancels it
+    if (!v.paused) return v.pause()
+    if (!dance.countIn) return void v.play().catch(() => {})
+    // Count-in: back to the top of the bar, 5-6-7-8 at the current speed,
+    // then go. play() + pause() inside the tap lets iOS start it later.
+    unlockAudio()
+    v.play().catch(() => {})
+    v.pause()
+    v.currentTime = barStart(loopBar ?? currentBar, grid)
+    cancelCountIn.current = playCountIn(beatLen(grid) / dance.speed, setCountingIn, () => {
+      cancelCountIn.current = null
+      setCountingIn(null)
+      void v.play().catch(() => {})
+    })
   }
   const goToBar = (bar: number) => {
     const b = Math.max(1, Math.min(bar, bars))
@@ -116,7 +153,8 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     seek(barStart(bar, grid))
   }
   const toggleMirror = () => onChange({ mirror: !dance.mirror })
-  const setSpeed = (speed: number) => onChange({ lastSpeed: Math.round(speed * 100) / 100 })
+  const toggleCountIn = () => onChange({ countIn: !dance.countIn })
+  const setSpeed = (speed: number) => onChange({ speed: Math.round(speed * 100) / 100 })
   const setSound = (sound: Sound) => {
     onChange({ sound })
     setPopover(null)
@@ -132,6 +170,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     ']': nextBar,
     l: toggleLoop,
     m: toggleMirror,
+    c: toggleCountIn,
     f: onEditFrame,
     '?': () => togglePopover('keys'),
     Escape: () => setPopover(null),
@@ -157,22 +196,25 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
       type="button"
       className="speed-pill mk-glass"
       data-open={popover === 'speed' || undefined}
-      aria-label={`Speed ${dance.lastSpeed}×`}
+      aria-label={`Speed ${dance.speed}×`}
       aria-expanded={popover === 'speed'}
       onClick={() => togglePopover('speed')}
     >
-      {formatSpeed(dance.lastSpeed)}
+      {formatSpeed(dance.speed)}
     </button>
   )
   const desktop = layout === 'desktop'
   const railIcon = layout === 'landscape' ? 16 : 28
-  const count = <BigCount count={pos.count} beat={pos.beatIndex} />
+  const count =
+    countingIn != null ? <BigCount count={countingIn} beat={countingIn} countIn />
+    : <BigCount count={pos.count} beat={pos.beatIndex} />
+  const countInGlyph = '5–8'
   const popovers = (
     <>
       {(popover === 'speed' || popover === 'sound') && (
         <button type="button" className="popover-dismiss" aria-label="Close" onClick={() => setPopover(null)} />
       )}
-      {popover === 'speed' && <SpeedPopover speed={dance.lastSpeed} onChange={setSpeed} />}
+      {popover === 'speed' && <SpeedPopover speed={dance.speed} onChange={setSpeed} />}
       {popover === 'sound' && <SoundPopover sound={dance.sound} onChange={setSound} />}
     </>
   )
@@ -195,7 +237,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
           videoRef={videoRef}
           onTap={togglePlay}
           onLoadedMetadata={(v) => {
-            v.playbackRate = dance.lastSpeed
+            v.playbackRate = dance.speed
             setDuration(v.duration)
             setAspect((dance.crop.w * v.videoWidth) / (dance.crop.h * v.videoHeight))
           }}
@@ -204,6 +246,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
           <nav className="desk-frame__tools" aria-label="Tools">
             <GlassButton icon="sound" label="Sound" size={36} iconSize={18} className={popover === 'sound' ? 'is-open' : ''} aria-expanded={popover === 'sound'} onClick={() => togglePopover('sound')} />
             <GlassButton icon="mirror" label="Mirror" size={36} iconSize={18} className={dance.mirror ? 'is-on' : ''} aria-pressed={dance.mirror} onClick={toggleMirror} />
+            <GlassButton glyph={countInGlyph} label="Count-in" size={36} className={dance.countIn ? 'is-on' : ''} aria-pressed={dance.countIn} onClick={toggleCountIn} />
             <GlassButton icon="frame" label="Edit frame" size={36} iconSize={18} onClick={onEditFrame} />
           </nav>
         )}
@@ -269,6 +312,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
               <nav className="learn__rail" aria-label="Tools">
                 <RailButton icon="sound" iconSize={railIcon} label="Sound" open={popover === 'sound'} onClick={() => togglePopover('sound')} />
                 <RailButton icon="mirror" iconSize={railIcon} label="Mirror" on={dance.mirror} onClick={toggleMirror} />
+                <RailButton glyph={countInGlyph} label="Count-in" on={dance.countIn} onClick={toggleCountIn} />
                 <RailButton icon="loop" iconSize={railIcon} label="Loop" on={loopBar != null} onClick={toggleLoop} />
                 <RailButton icon="frame" iconSize={railIcon} label="Frame" onClick={onEditFrame} />
               </nav>
@@ -333,9 +377,9 @@ function SpeedPopover({ speed, onChange }: { speed: number; onChange: (s: number
 }
 
 const SOUND_OPTIONS: { value: Sound; title: string; hint: string; disabled?: boolean }[] = [
-  { value: 'music', title: 'Music', hint: 'Just the track' },
-  { value: 'music+counts', title: 'Music + counts', hint: 'Count shown on screen' },
-  { value: 'counts', title: 'Counts only', hint: 'Voice says 1–8, music off', disabled: true },
+  { value: 'voice', title: 'Voice counts', hint: 'Spoken 1–8, music off' },
+  { value: 'music+voice', title: 'Music + voice', hint: 'Counts spoken over the track' },
+  { value: 'music', title: 'Music only', hint: 'Just the track' },
 ]
 
 function SoundPopover({ sound, onChange }: { sound: Sound; onChange: (s: Sound) => void }) {

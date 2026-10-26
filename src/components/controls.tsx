@@ -6,13 +6,14 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement>
 /** Round glass button (back, more, transport). */
 export function GlassButton({
   icon,
+  glyph,
   label,
   size = 40,
   iconSize,
   flip,
   className = '',
   ...rest
-}: { icon: IconName; label: string; size?: number; iconSize?: number; flip?: boolean } & ButtonProps) {
+}: { icon?: IconName; glyph?: ReactNode; label: string; size?: number; iconSize?: number; flip?: boolean } & ButtonProps) {
   return (
     <button
       type="button"
@@ -21,7 +22,7 @@ export function GlassButton({
       style={{ width: size, height: size }}
       {...rest}
     >
-      <Icon name={icon} size={iconSize ?? Math.round(size * 0.48)} flip={flip} />
+      {icon ? <Icon name={icon} size={iconSize ?? Math.round(size * 0.48)} flip={flip} /> : <span className="glyph mk-label-mono">{glyph}</span>}
     </button>
   )
 }
@@ -29,12 +30,13 @@ export function GlassButton({
 /** Labelled control on the right-hand video rail. */
 export function RailButton({
   icon,
+  glyph,
   label,
   open,
   on,
   iconSize = 28,
   ...rest
-}: { icon: IconName; label: string; open?: boolean; on?: boolean; iconSize?: number } & ButtonProps) {
+}: { icon?: IconName; glyph?: ReactNode; label: string; open?: boolean; on?: boolean; iconSize?: number } & ButtonProps) {
   return (
     <button
       type="button"
@@ -46,7 +48,7 @@ export function RailButton({
       {...rest}
     >
       <span className="rail-btn__disc mk-glass">
-        <Icon name={icon} size={iconSize} />
+        {icon ? <Icon name={icon} size={iconSize} /> : <span className="glyph mk-label-mono">{glyph}</span>}
       </span>
       <span className="rail-btn__label mk-label-mono mk-over-video">{label}</span>
     </button>

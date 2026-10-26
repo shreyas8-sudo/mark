@@ -175,7 +175,7 @@ function DanceCard({ dance: d, menuOpen, renaming, onOpen, onMenu, onCloseMenu, 
     objectPosition: `${(d.mirror ? 1 - d.crop.x - d.crop.w / 2 : d.crop.x + d.crop.w / 2) * 100}% ${(d.crop.y + d.crop.h / 2) * 100}%`,
     transform: d.mirror ? 'scaleX(-1)' : undefined,
   }
-  const meta = [formatTime(d.duration), `${d.bars} bars`, d.lastSpeed !== 1 && formatSpeed(d.lastSpeed)]
+  const meta = [formatTime(d.duration), `${d.bars} bars`, d.speed !== 1 && formatSpeed(d.speed)]
     .filter(Boolean)
     .join(' · ')
 

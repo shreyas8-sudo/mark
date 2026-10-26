@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { beatsBetween, mediaToCtx } from './beatClock'
+import { beatsBetween, mediaToCtx, scheduleWindow } from './beatClock'
 
 const g = { bpm: 120, offset: 1 } // 0.5 s beats starting at 1 s
 
@@ -24,5 +24,23 @@ describe('beat clock', () => {
     expect(mediaToCtx(3, 2, 10, 1)).toBe(11)
     expect(mediaToCtx(3, 2, 10, 0.5)).toBe(12) // one video-second takes two real seconds
     expect(mediaToCtx(3, 2, 10, 1.25)).toBeCloseTo(10.8)
+  })
+})
+
+describe('schedule window', () => {
+  it('looks ahead in real seconds, so slower playback covers less video time', () => {
+    expect(scheduleWindow(10, 1, 0.6).to).toBeCloseTo(10.6)
+    expect(scheduleWindow(10, 0.5, 0.6).to).toBeCloseTo(10.3)
+  })
+
+  // Spec: "Voice mode at 0.5× — spoken counts stay on the beat across a 4-bar loop"
+  it('never schedules the beat at a loop end (the wrap plays it instead)', () => {
+    const loopEnd = 3 // bar ends exactly on a beat
+    const w = scheduleWindow(2.8, 0.5, 0.6, loopEnd)
+    const beats = beatsBetween(g, w.from, w.to).map((b) => b.mediaTime)
+    expect(beats).not.toContain(3)
+    // after the wrap, the bar's first beat is in the window again
+    const after = scheduleWindow(1, 0.5, 0.6, loopEnd)
+    expect(beatsBetween(g, after.from, after.to)[0]).toMatchObject({ mediaTime: 1, count: 1 })
   })
 })

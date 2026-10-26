@@ -7,6 +7,7 @@ import { VideoStage } from '../components/VideoStage'
 import { useKeys } from '../hooks/useKeys'
 import { useLayout } from '../hooks/useLayout'
 import { usePlayhead } from '../hooks/usePlayhead'
+import { useVoiceCounts } from '../hooks/useVoiceCounts'
 import { barEnd, barStart, beatLen, COUNTS_PER_BAR, position } from '../lib/beat'
 import { countIn } from '../lib/countIn'
 import { IDLE, runReducer } from '../lib/runner'
@@ -61,6 +62,15 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
     v.play().catch(() => {})
     v.pause()
   }, [])
+
+  // Optional spoken counts over the music while the bars play (never in the
+  // count-in, which stays as beeps). The run jumps back at the range end.
+  useVoiceCounts(videoRef, {
+    enabled: !!run.voice && state.phase === 'playing' && !active?.paused,
+    grid: dance,
+    volume: 0.7,
+    stopAt: end,
+  })
 
   const phase = state.phase
   const seq = active?.seq

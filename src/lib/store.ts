@@ -4,6 +4,7 @@
 import { createStore, del, entries, get, set } from 'idb-keyval'
 import { DEMO } from '../data/demo'
 import { barCount } from './beat'
+import { migrate } from './migrate'
 import type { Dance } from '../types'
 
 const meta = createStore('mark', 'dances')
@@ -25,8 +26,9 @@ export async function loadDances(): Promise<Dance[]> {
   const dances: Dance[] = []
   let demoSaved: Meta | undefined
 
-  for (const [key, m] of rows) {
+  for (const [key, raw] of rows) {
     if (!key.startsWith('dance:')) continue
+    const m = migrate(raw) as Meta
     if (m.id === DEMO.id) {
       demoSaved = m
       continue
