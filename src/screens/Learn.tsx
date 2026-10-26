@@ -2,15 +2,18 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperti
 import { Ambient } from '../components/Ambient'
 import { BarStrip } from '../components/BarStrip'
 import { BigCount } from '../components/BigCount'
+import { CoachMarks, type CoachMark } from '../components/CoachMarks'
 import { Button, DeskTopBar, GlassButton, ModeCarousel, PlayShutter, RailButton, ShortcutsButton } from '../components/controls'
 import { Icon } from '../components/Icon'
 import { VideoStage } from '../components/VideoStage'
+import { DEMO } from '../data/demo'
 import { useKeys } from '../hooks/useKeys'
 import { useLayout } from '../hooks/useLayout'
 import { usePeaks } from '../hooks/usePeaks'
 import { usePlayhead } from '../hooks/usePlayhead'
 import { useVoiceCounts } from '../hooks/useVoiceCounts'
 import { barEnd, barStart, beatLen, loopTarget, position, stepBeat, type Grid } from '../lib/beat'
+import { coachMarksDone } from '../lib/coachMarks'
 import { countIn as playCountIn, unlockAudio } from '../lib/countIn'
 import { followLearned, lastLearned, markLearned, SLOW_SPEED, unmarkLearned } from '../lib/learn'
 import { formatSpeed, SPEED_MAX, SPEED_MIN } from '../lib/speed'
@@ -33,6 +36,13 @@ const SHORTCUTS: [string, string][] = [
 ]
 
 type Popover = 'speed' | 'sound' | 'keys' | null
+
+// First visit only, over the demo.
+const COACH_MARKS: CoachMark[] = [
+  { target: 'strip', text: 'Tap a chunk to jump to a bar' },
+  { target: 'speed', text: 'Start slow. Speed up when it clicks' },
+  { target: 'got-it', text: "Got it? Tap ✓, then rehearse what you've learned" },
+]
 
 type Props = {
   dance: Dance
@@ -57,6 +67,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
   const [loopBar, setLoopBar] = useState<number | null>(() => Math.min(Math.max(1, dance.currentBar), dance.bars))
   const [runEnd, setRunEnd] = useState<number | null>(null) // "Run 1–N together"
   const [sheet, setSheet] = useState<{ bar: number; learned: number[] } | null>(null)
+  const [coaching, setCoaching] = useState(() => dance.id === DEMO.id && !coachMarksDone())
   const [popover, setPopover] = useState<Popover>(null)
   const [controlsH, setControlsH] = useState(0)
   const [countingIn, setCountingIn] = useState<number | null>(null) // 5–8 on screen
@@ -266,6 +277,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     <button
       type="button"
       className="speed-pill mk-glass"
+      data-coach="speed"
       data-open={popover === 'speed' || undefined}
       aria-label={`Speed ${dance.speed}×`}
       aria-expanded={popover === 'speed'}
@@ -288,6 +300,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
       size={size}
       iconSize={Math.round(size * 0.5)}
       className={`got-it${thisBarLearned ? ' is-learned' : ''}`}
+      data-coach="got-it"
       onClick={gotIt}
     />
   )
@@ -360,7 +373,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
           <div className="desk-count">{count}</div>
           {/* One row, ≤72px: bar position · transport · speed */}
           <footer className="desk-dock">
-            <div className="desk-dock__wave">
+            <div className="desk-dock__wave" data-coach="strip">
               <GlassButton icon="back" label="Back one beat" size={36} iconSize={16} onClick={() => step(-1)} />
               {strip('all')}
               <GlassButton icon="back" flip label="Forward one beat" size={36} iconSize={16} onClick={() => step(1)} />
@@ -382,13 +395,14 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
             </div>
             <div className="desk-dock__end">
               {speedPill}
-              <Button className="got-it-pill" onClick={gotIt}>
+              <Button className="got-it-pill" data-coach="got-it" onClick={gotIt}>
                 <Icon name="check" size={18} /> Got it
               </Button>
             </div>
           </footer>
           {popovers}
           {gotItSheet}
+          {coaching && <CoachMarks marks={COACH_MARKS} onDone={() => setCoaching(false)} />}
         </>
       ) : (
         <>
@@ -428,13 +442,14 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
                 {speedPill}
                 {gotItButton()}
               </div>
-              <div ref={stripRef} className="learn__strip">
+              <div ref={stripRef} className="learn__strip" data-coach="strip">
                 {strip('current', layout === 'portrait' ? 64 : 56)}
               </div>
             </footer>
           </div>
           {popovers}
           {gotItSheet}
+          {coaching && <CoachMarks marks={COACH_MARKS} onDone={() => setCoaching(false)} />}
         </>
       )}
     </div>
