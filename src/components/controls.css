@@ -135,11 +135,11 @@ button:focus-visible {
 }
 
 .side-labels__label--left {
-  left: var(--sides-inset-left, 12px);
+  left: var(--sides-inset, 12px);
 }
 
 .side-labels__label--right {
-  right: var(--sides-inset-right, 12px);
+  right: var(--sides-inset, 12px);
 }
 
 /* ---- Button ---- */

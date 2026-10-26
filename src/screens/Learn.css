@@ -474,16 +474,16 @@
 }
 
 /* ---- L / R: above the transport bar, and clear of the tool column where
-   it sits over the video ---- */
+   it sits over the video. Both sides share one inset, so they mirror. ---- */
 .learn {
   --sides-bottom: 84px;
 }
 
 .learn:not([data-layout='desktop']),
 .learn[data-wide] {
-  --sides-inset-right: 64px;
+  --sides-inset: 64px;
 }
 
 .learn[data-wide][data-layout='desktop'] {
-  --sides-inset-right: 76px;
+  --sides-inset: 76px;
 }
