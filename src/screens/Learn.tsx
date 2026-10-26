@@ -3,7 +3,7 @@ import { Ambient } from '../components/Ambient'
 import { BarStrip } from '../components/BarStrip'
 import { BigCount } from '../components/BigCount'
 import { CoachMarks, type CoachMark } from '../components/CoachMarks'
-import { Button, DeskTopBar, GlassButton, ModeCarousel, PlayShutter, RailButton, ShortcutsButton } from '../components/controls'
+import { Button, DeskTopBar, GlassButton, ModeCarousel, PlayShutter, RailButton, ShortcutsButton, Toggle } from '../components/controls'
 import { Icon } from '../components/Icon'
 import { VideoStage } from '../components/VideoStage'
 import { DEMO } from '../data/demo'
@@ -14,9 +14,19 @@ import { usePlayhead } from '../hooks/usePlayhead'
 import { useVoiceCounts } from '../hooks/useVoiceCounts'
 import { barEnd, barStart, beatLen, loopTarget, position, stepBeat, type Grid } from '../lib/beat'
 import { coachMarksDone } from '../lib/coachMarks'
-import { countIn as playCountIn, unlockAudio } from '../lib/countIn'
-import { followLearned, lastLearned, markLearned, SLOW_SPEED, unmarkLearned } from '../lib/learn'
+import { audioContext, countIn as playCountIn, unlockAudio } from '../lib/countIn'
+import {
+  echoHandover,
+  followLearned,
+  lastLearned,
+  markLearned,
+  nextSpeed,
+  NUDGE_AFTER_LOOPS,
+  SLOW_SPEED,
+  unmarkLearned,
+} from '../lib/learn'
 import { formatSpeed, SPEED_MAX, SPEED_MIN } from '../lib/speed'
+import { loadVoices, playVoices, type VoiceName } from '../lib/voice'
 import type { Dance, Sound } from '../types'
 import './Learn.css'
 
@@ -68,27 +78,25 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
   const [runEnd, setRunEnd] = useState<number | null>(null) // "Run 1–N together"
   const [sheet, setSheet] = useState<{ bar: number; learned: number[] } | null>(null)
   const [coaching, setCoaching] = useState(() => dance.id === DEMO.id && !coachMarksDone())
+  // "Your turn" echo: video does 1–4, the dancer does 5–8 to spoken counts.
+  const [echo, setEcho] = useState(false)
+  const [yourTurn, setYourTurn] = useState(false)
+  const cancelTurn = useRef<(() => void) | null>(null)
+  // Speed-up nudge after a few laps of the same bar at the same speed.
+  const laps = useRef({ key: '', count: 0 })
+  const nudged = useRef(new Set<string>())
+  const [nudge, setNudge] = useState<number | null>(null)
   const [popover, setPopover] = useState<Popover>(null)
   const [controlsH, setControlsH] = useState(0)
   const [countingIn, setCountingIn] = useState<number | null>(null) // 5–8 on screen
   const cancelCountIn = useRef<(() => void) | null>(null)
   const peaks = usePeaks(dance, onPeaks)
 
-  const { t, playing } = usePlayhead(videoRef, (video) => {
-    if (runEnd != null) {
-      // Run-through finished: stop and bring the sheet back.
-      if (video.currentTime >= barEnd(runEnd, grid)) {
-        video.pause()
-        video.currentTime = barEnd(runEnd, grid) - 0.02 // rest on bar N, not a frame into N+1
-        setRunEnd(null)
-        setSheet({ bar: runEnd, learned: dance.learned })
-      }
-      return
-    }
-    if (loopBar == null) return
-    const target = loopTarget(video.currentTime, loopBar, grid)
-    if (target != null) video.currentTime = target
-  })
+  // Per-frame work (run-through end, echo handover, bar loop) is defined
+  // further down, once the handlers it calls exist.
+  const onFrame = useRef<(video: HTMLVideoElement) => void>(() => {})
+  const { t, playing } = usePlayhead(videoRef, (video) => onFrame.current(video))
+
 
   const pos = position(t, grid)
   const bars = dance.bars
@@ -105,11 +113,18 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     if (v) v.muted = dance.sound === 'voice'
   }, [dance.sound])
 
+  const echoBar = loopBar ?? currentBar
   useVoiceCounts(videoRef, {
-    enabled: dance.sound !== 'music',
+    enabled: dance.sound !== 'music' || echo,
     grid,
     volume: dance.sound === 'voice' ? 1 : 0.7,
-    stopAt: runEnd != null ? barEnd(runEnd, grid) : loopBar != null ? barEnd(loopBar, grid) : null,
+    stopAt:
+      echo ? echoHandover(barStart(echoBar, grid), beatLen(grid))
+      : runEnd != null ? barEnd(runEnd, grid)
+      : loopBar != null ? barEnd(loopBar, grid)
+      : null,
+    yourTurnOnFour: echo,
+    skipAt: echo ? barStart(echoBar, grid) : null, // the echo engine says that "1"
   })
 
   // Remember where guided Learn resumes.
@@ -118,7 +133,13 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     if (loopBar != null && loopBar !== savedBar) onChange({ currentBar: loopBar })
   }, [loopBar, savedBar, onChange])
 
-  useEffect(() => () => cancelCountIn.current?.(), [])
+  useEffect(
+    () => () => {
+      cancelCountIn.current?.()
+      cancelTurn.current?.()
+    },
+    [],
+  )
 
   // Phone (portrait and landscape): the video gets everything above the bar
   // strip, so the strip never covers the dancer's feet; the transport floats
@@ -144,6 +165,107 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     cancelCountIn.current = null
     setCountingIn(null)
   }
+  // ---- "Your turn" echo ----
+  const stopYourTurn = () => {
+    cancelTurn.current?.()
+    cancelTurn.current = null
+    setYourTurn(false)
+    setCountingIn(null)
+  }
+  /** Freeze on 5; the voice counts 5–8 on the beat; the video picks up at the next 1. */
+  function startYourTurn(bar: number) {
+    const v = videoRef.current
+    if (!v) return
+    v.pause()
+    const beatReal = beatLen(grid) / v.playbackRate
+    const timers: number[] = []
+    let voices: { cancel: () => void } | null = null
+    let cancelled = false
+    cancelTurn.current = () => {
+      cancelled = true
+      timers.forEach(clearTimeout)
+      voices?.cancel()
+    }
+    setYourTurn(true)
+    // When count 5 *should* have sounded, on the audio clock: the frame that
+    // noticed the handover may be a little late, and the rest of the bar
+    // (and the restart on 1) must stay on the beat grid regardless.
+    const ctx = audioContext()
+    const lateBy = (v.currentTime - echoHandover(barStart(bar, grid), beatLen(grid))) / v.playbackRate
+    const t0 = ctx.currentTime - Math.max(0, lateBy)
+    void loadVoices().then((clips) => {
+      if (cancelled) return
+      // 5-6-7-8 for the dancer, then the "1" the video restarts on.
+      voices = playVoices(
+        clips,
+        ['5', '6', '7', '8', '1'].map((name, i) => ({
+          name: name as VoiceName,
+          at: Math.max(t0 + i * beatReal, ctx.currentTime + 0.005), // "5" now if already due
+        })),
+      )
+      const at = (i: number) => Math.max(0, (t0 + i * beatReal - ctx.currentTime) * 1000)
+      ;[5, 6, 7, 8].forEach((c, i) => timers.push(window.setTimeout(() => setCountingIn(c), at(i))))
+      // Cue the video at the top of the bar on 8, so it can start right on 1.
+      timers.push(window.setTimeout(() => (v.currentTime = barStart(bar, grid)), at(3)))
+      timers.push(
+        window.setTimeout(() => {
+          cancelTurn.current = null
+          setYourTurn(false)
+          setCountingIn(null)
+          countLap(bar)
+          void v.play().catch(() => {})
+        }, at(4)),
+      )
+    })
+  }
+  const toggleEcho = (on: boolean) => {
+    stopYourTurn()
+    setEcho(on)
+    if (on && loopBar == null) setLoopBar(currentBar) // echo works one bar at a time
+  }
+
+  // ---- Speed-up nudge (never changes speed by itself) ----
+  function countLap(bar: number) {
+    const key = `${bar}@${dance.speed}`
+    laps.current = laps.current.key === key ? { key, count: laps.current.count + 1 } : { key, count: 1 }
+    const next = nextSpeed(dance.speed)
+    if (laps.current.count >= NUDGE_AFTER_LOOPS && next && !nudged.current.has(key)) {
+      nudged.current.add(key)
+      setNudge(next)
+    }
+  }
+  useEffect(() => {
+    if (nudge == null) return
+    const id = window.setTimeout(() => setNudge(null), 8000)
+    return () => clearTimeout(id)
+  }, [nudge])
+
+  useEffect(() => {
+    onFrame.current = (video) => {
+      if (runEnd != null) {
+        // Run-through finished: stop and bring the sheet back.
+        if (video.currentTime >= barEnd(runEnd, grid)) {
+          video.pause()
+          video.currentTime = barEnd(runEnd, grid) - 0.02 // rest on bar N, not a frame into N+1
+          setRunEnd(null)
+          setSheet({ bar: runEnd, learned: dance.learned })
+        }
+        return
+      }
+      if (echo) {
+        if (cancelTurn.current) return
+        const bar = loopBar ?? Math.min(position(video.currentTime, grid).bar, dance.bars)
+        if (video.currentTime >= echoHandover(barStart(bar, grid), beatLen(grid))) startYourTurn(bar)
+        return
+      }
+      if (loopBar == null) return
+      const target = loopTarget(video.currentTime, loopBar, grid)
+      if (target == null) return
+      if (video.currentTime >= barEnd(loopBar, grid)) countLap(loopBar) // a wrap, not a jump in
+      video.currentTime = target
+    }
+  })
+
   /** Play from `from` (with the 5-6-7-8 if count-in is on). Call from a tap. */
   const startFrom = (from: number, speed = dance.speed) => {
     const v = videoRef.current
@@ -169,6 +291,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     const v = videoRef.current
     if (!v) return
     if (cancelCountIn.current) return stopCountIn() // tap during 5-6-7-8 cancels it
+    if (cancelTurn.current) return stopYourTurn() // ...and during your turn
     if (!v.paused) return v.pause()
     if (!dance.countIn) return void v.play().catch(() => {})
     startFrom(barStart(loopBar ?? currentBar, grid)) // count in from the top of the bar
@@ -289,8 +412,26 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
   const desktop = layout === 'desktop'
   const railIcon = layout === 'landscape' ? 16 : 28
   const count =
-    countingIn != null ? <BigCount count={countingIn} beat={countingIn} countIn />
+    countingIn != null ? <BigCount count={countingIn} beat={countingIn} countIn caption={yourTurn ? 'Your turn' : undefined} />
     : <BigCount count={pos.count} beat={pos.beatIndex} />
+  const nudgeToast = nudge != null && (
+    <div className="nudge mk-glass" role="status">
+      <span className="mk-body-strong">Feeling it? Try {formatSpeed(nudge)}</span>
+      <button
+        type="button"
+        className="nudge__try mk-body-strong"
+        onClick={() => {
+          setSpeed(nudge)
+          setNudge(null)
+        }}
+      >
+        Try it
+      </button>
+      <button type="button" className="nudge__close" aria-label="Dismiss" onClick={() => setNudge(null)}>
+        <Icon name="close" size={16} />
+      </button>
+    </div>
+  )
   const countInGlyph = '5–8'
   const thisBarLearned = dance.learned.includes(loopBar ?? currentBar)
   const gotItButton = (size = 40) => (
@@ -321,7 +462,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
         <button type="button" className="popover-dismiss" aria-label="Close" onClick={() => setPopover(null)} />
       )}
       {popover === 'speed' && <SpeedPopover speed={dance.speed} onChange={setSpeed} />}
-      {popover === 'sound' && <SoundPopover sound={dance.sound} onChange={setSound} />}
+      {popover === 'sound' && <SoundPopover sound={dance.sound} onChange={setSound} echo={echo} onEcho={toggleEcho} />}
     </>
   )
 
@@ -401,6 +542,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
             </div>
           </footer>
           {popovers}
+          {nudgeToast}
           {gotItSheet}
           {coaching && <CoachMarks marks={COACH_MARKS} onDone={() => setCoaching(false)} />}
         </>
@@ -448,6 +590,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
             </footer>
           </div>
           {popovers}
+          {nudgeToast}
           {gotItSheet}
           {coaching && <CoachMarks marks={COACH_MARKS} onDone={() => setCoaching(false)} />}
         </>
@@ -547,7 +690,17 @@ const SOUND_OPTIONS: { value: Sound; title: string; hint: string; disabled?: boo
   { value: 'music', title: 'Music only', hint: 'Just the track' },
 ]
 
-function SoundPopover({ sound, onChange }: { sound: Sound; onChange: (s: Sound) => void }) {
+function SoundPopover({
+  sound,
+  onChange,
+  echo,
+  onEcho,
+}: {
+  sound: Sound
+  onChange: (s: Sound) => void
+  echo: boolean
+  onEcho: (on: boolean) => void
+}) {
   return (
     <div className="popover popover--sound" role="dialog" aria-label="Sound">
       <div className="popover__head mk-label-mono">
@@ -570,6 +723,13 @@ function SoundPopover({ sound, onChange }: { sound: Sound; onChange: (s: Sound) 
           </span>
         </button>
       ))}
+      <div className="sound-echo">
+        <span className="sound-option__text">
+          <span className="mk-body-strong">Your turn</span>
+          <span className="mk-body-small">Video does 1–4, you do 5–8</span>
+        </span>
+        <Toggle label="Your turn echo" on={echo} onChange={onEcho} />
+      </div>
     </div>
   )
 }

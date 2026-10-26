@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { followLearned, lastLearned, markLearned, unmarkLearned } from './learn'
+import { echoHandover, followLearned, lastLearned, markLearned, nextSpeed, unmarkLearned } from './learn'
 
 const run = { barStart: 1, barEnd: 1, countIn: true, loops: [] }
 
@@ -30,5 +30,20 @@ describe('guided learn', () => {
 
   it('pulls the range back when the last learned bar is unticked', () => {
     expect(followLearned({ ...run, barEnd: 3 }, [1, 2, 3], [1, 2])).toMatchObject({ barEnd: 2 })
+  })
+})
+
+describe('speed nudge', () => {
+  it('suggests the next preset up, and nothing at the top', () => {
+    expect(nextSpeed(0.5)).toBe(0.75)
+    expect(nextSpeed(0.6)).toBe(0.75)
+    expect(nextSpeed(1)).toBe(1.25)
+    expect(nextSpeed(1.25)).toBeNull()
+  })
+})
+
+describe('echo', () => {
+  it('hands over to the dancer on count 5', () => {
+    expect(echoHandover(10, 0.5)).toBe(12)
   })
 })

@@ -13,6 +13,10 @@ type Options = {
   volume: number
   /** Video time the playhead jumps back from (loop end / run range end). */
   stopAt?: number | null
+  /** Echo mode: say "your turn" in place of "four". */
+  yourTurnOnFour?: boolean
+  /** A beat (video time) someone else speaks, e.g. the echo restart's "1". */
+  skipAt?: number | null
 }
 
 /**
@@ -21,10 +25,15 @@ type Options = {
  * playbackRate; any seek, pause or speed change drops the queue and
  * re-plans from the new playhead, so loops and jumps stay on the beat.
  */
-export function useVoiceCounts(videoRef: RefObject<HTMLVideoElement | null>, { enabled, grid, volume, stopAt }: Options) {
+export function useVoiceCounts(
+  videoRef: RefObject<HTMLVideoElement | null>,
+  { enabled, grid, volume, stopAt, yourTurnOnFour = false, skipAt }: Options,
+) {
   const stopAtRef = useRef(stopAt)
+  const skipAtRef = useRef(skipAt)
   useEffect(() => {
     stopAtRef.current = stopAt
+    skipAtRef.current = skipAt
   })
 
   const { bpm, offset } = grid
@@ -34,6 +43,9 @@ export function useVoiceCounts(videoRef: RefObject<HTMLVideoElement | null>, { e
     const g = { bpm, offset }
     let clips: Awaited<ReturnType<typeof loadVoices>> | null = null
     const queued = new Map<number, Scheduled>() // by beat index
+    // Right after playback starts, video.currentTime is briefly unreliable
+    // as a clock; queue only imminent beats until it settles.
+    let settlingUntil = 0
 
     const clear = () => {
       queued.forEach((s) => s.cancel())
@@ -46,10 +58,15 @@ export function useVoiceCounts(videoRef: RefObject<HTMLVideoElement | null>, { e
       const now = video.currentTime
       const rate = video.playbackRate
       const { from, to } = scheduleWindow(now, rate, LOOKAHEAD, stopAtRef.current ?? Infinity)
+      const settling = ctx.currentTime < settlingUntil
       for (const b of beatsBetween(g, from, to)) {
         if (queued.has(b.beatIndex)) continue
+        if (settling && b.mediaTime > now + 0.05 * rate) continue
+        const skip = skipAtRef.current
+        if (skip != null && Math.abs(b.mediaTime - skip) < 0.01) continue
         const at = mediaToCtx(b.mediaTime, now, ctx.currentTime, rate)
-        queued.set(b.beatIndex, playVoices(clips, [{ name: String(b.count) as VoiceName, at }], volume))
+        const name: VoiceName = yourTurnOnFour && b.count === 4 ? 'your-turn' : (String(b.count) as VoiceName)
+        queued.set(b.beatIndex, playVoices(clips, [{ name, at }], volume))
       }
       // Forget counts that have played, so a loop's next lap can queue them again.
       for (const [i] of queued) if (offset + i * (60 / bpm) < now - 0.5) queued.delete(i)
@@ -64,14 +81,19 @@ export function useVoiceCounts(videoRef: RefObject<HTMLVideoElement | null>, { e
     // only top it up (queued beats are skipped), so a loop wrap — which
     // fires both — never cancels and re-queues the same "one".
     const replan = ['seeking', 'pause', 'ratechange']
-    const resume = ['playing', 'seeked']
+    const onPlaying = () => {
+      settlingUntil = audioContext().currentTime + 0.15
+      tick()
+    }
     replan.forEach((e) => video.addEventListener(e, clear))
-    resume.forEach((e) => video.addEventListener(e, tick))
+    video.addEventListener('playing', onPlaying)
+    video.addEventListener('seeked', tick)
     return () => {
       clearInterval(id)
       clear()
       replan.forEach((e) => video.removeEventListener(e, clear))
-      resume.forEach((e) => video.removeEventListener(e, tick))
+      video.removeEventListener('playing', onPlaying)
+      video.removeEventListener('seeked', tick)
     }
-  }, [videoRef, enabled, bpm, offset, volume])
+  }, [videoRef, enabled, bpm, offset, volume, yourTurnOnFour])
 }

@@ -6,6 +6,8 @@ type Props = {
   beat: number
   /** Count-in 5-6-7-8: whole display in the accent colour. */
   countIn?: boolean
+  /** Small label under the number (e.g. "Your turn"). */
+  caption?: string
   className?: string
 }
 
@@ -14,7 +16,7 @@ type Props = {
  * 1 → 1.25 → 1 (count 1: → 1.35 with an accent flash). Re-keying the
  * digit restarts the CSS animation exactly on the beat.
  */
-export function BigCount({ count, beat, countIn, className = '' }: Props) {
+export function BigCount({ count, beat, countIn, caption, className = '' }: Props) {
   return (
     <div className={`big-count ${className}`} data-count-in={countIn || undefined} aria-live="off">
       {count != null && (
@@ -22,6 +24,7 @@ export function BigCount({ count, beat, countIn, className = '' }: Props) {
           {count}
         </span>
       )}
+      {caption && <span className="big-count__caption mk-label-mono mk-over-video">{caption}</span>}
     </div>
   )
 }

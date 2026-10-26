@@ -2,6 +2,7 @@
   --count-size: 96px;
   display: grid;
   place-items: center;
+  align-content: center;
   min-width: calc(var(--count-size) * 0.8);
   height: var(--count-size);
   pointer-events: none;
@@ -21,6 +22,11 @@
 
 .big-count[data-count-in] .big-count__digit {
   color: var(--mk-accent-primary);
+}
+
+.big-count__caption {
+  color: var(--mk-accent-soft);
+  white-space: nowrap;
 }
 
 @keyframes count-pulse {
