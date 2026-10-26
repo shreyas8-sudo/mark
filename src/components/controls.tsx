@@ -55,22 +55,21 @@ export function RailButton({
   )
 }
 
-/** Primary play/pause, styled after the camera shutter. */
+/** Primary play/pause: a plain solid circle. */
 export function PlayShutter({
   playing,
   iconSize = 24,
+  className = '',
   ...rest
 }: { playing: boolean; iconSize?: number } & ButtonProps) {
   return (
     <button
       type="button"
-      className="shutter"
+      className={`shutter ${className}`}
       aria-label={playing ? 'Pause' : 'Play'}
       {...rest}
     >
-      <span className="shutter__core">
-        <Icon name={playing ? 'pause' : 'play'} size={iconSize} />
-      </span>
+      <Icon name={playing ? 'pause' : 'play'} size={iconSize} />
     </button>
   )
 }

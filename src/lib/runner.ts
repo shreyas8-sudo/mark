@@ -67,12 +67,3 @@ export function runReducer(cfg: RunConfig) {
     }
   }
 }
-
-/** Rough run length in seconds, for the "~1 MIN" summary. */
-export function runSeconds(cfg: RunConfig, bars: number, barLen: number) {
-  const beat = barLen / 8
-  return cfg.loops.reduce(
-    (sum, l) => sum + (l.plays * bars * barLen + (cfg.countIn ? 4 * beat : 0)) / l.speed,
-    0,
-  )
-}

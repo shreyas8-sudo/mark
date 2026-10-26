@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Loop } from '../types'
-import { IDLE, runReducer, runSeconds, type RunConfig, type RunState } from './runner'
+import { IDLE, runReducer, type RunConfig, type RunState } from './runner'
 
 const DEFAULT_LOOPS: Loop[] = [
   { speed: 0.5, plays: 1 },
@@ -76,11 +76,5 @@ describe('rehearse runner', () => {
   it('ends back at setup from anywhere', () => {
     const step = runReducer({ loops: DEFAULT_LOOPS, countIn: true })
     expect(step(step(IDLE, { type: 'start' }), { type: 'end' })).toEqual(IDLE)
-  })
-
-  it('estimates run length', () => {
-    // 4 bars × 5 s at 0.5/0.75/1× = 40 + 26.7 + 20, plus 4-beat count-ins
-    const s = runSeconds({ loops: DEFAULT_LOOPS, countIn: true }, 4, 5)
-    expect(s).toBeCloseTo(86.67 + 2.5 / 0.5 + 2.5 / 0.75 + 2.5, 1)
   })
 })

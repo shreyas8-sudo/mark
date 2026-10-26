@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { Ambient } from '../components/Ambient'
 import { BarStrip } from '../components/BarStrip'
 import { Button, GlassButton, ModeCarousel, Toggle } from '../components/controls'
 import { Icon } from '../components/Icon'
 import { VideoStage } from '../components/VideoStage'
 import { usePeaks } from '../hooks/usePeaks'
-import { barLen, barStart } from '../lib/beat'
-import { runSeconds } from '../lib/runner'
+import { barStart } from '../lib/beat'
 import { formatSpeed, SPEED_MAX, SPEED_MIN } from '../lib/speed'
 import type { Dance, Loop } from '../types'
 import './Rehearse.css'
@@ -28,38 +28,51 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
   const grid = useMemo(() => ({ bpm: dance.bpm, offset: dance.offset }), [dance.bpm, dance.offset])
   const [sheet, setSheet] = useState<{ index: number | null } | null>(null) // null index = add
   const range = `Bars ${run.barStart} → ${run.barEnd}`
-  const secs = runSeconds(run, run.barEnd - run.barStart + 1, barLen(dance))
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Narrow windows dock the sheet at the bottom; the video then gets the
+  // space above it. Wide ones dock it on the right (all CSS).
+  const sheetRef = useRef<HTMLElement>(null)
+  const [sheetH, setSheetH] = useState(0)
+  useLayoutEffect(() => {
+    const el = sheetRef.current!
+    const measure = () => setSheetH(window.innerHeight - el.getBoundingClientRect().top)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    window.addEventListener('resize', measure)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [])
 
   const setLoops = (loops: Loop[]) => onChange({ ...run, loops })
 
   return (
-    <main className="rehearse-setup" data-mode="rehearse">
-      <div className="rehearse-setup__hero">
+    <main className="rehearse-setup" data-mode="rehearse" style={{ '--sheet-h': `${sheetH}px` } as CSSProperties}>
+      <Ambient videoRef={videoRef} />
+      <div className="rehearse-setup__stage">
         <VideoStage
           src={src}
           mirror={dance.mirror}
           crop={dance.crop}
-          fit="cover"
-          videoRef={null}
+          fit="contain"
+          videoRef={videoRef}
           onLoadedMetadata={(v) => {
             v.currentTime = barStart(run.barStart, dance)
           }}
         />
-        <div className="rehearse-setup__scrim" />
-        <header className="rehearse-setup__top">
-          <GlassButton icon="back" label="Back to library" onClick={onBack} />
-          <ModeCarousel mode="rehearse" onChange={(m) => m === 'learn' && onLearn()} />
-          <span className="rehearse-setup__spacer" />
-        </header>
       </div>
+      <div className="rehearse-setup__scrim" />
+      <header className="rehearse-setup__top">
+        <GlassButton icon="back" label="Back to library" onClick={onBack} />
+        <ModeCarousel mode="rehearse" onChange={(m) => m === 'learn' && onLearn()} />
+        <span className="rehearse-setup__spacer" />
+      </header>
 
-      <section className="rehearse-setup__sheet">
-        <div>
-          <h1 className="mk-heading-m">Set up your run</h1>
-          <p className="rehearse-setup__summary mk-label-mono">
-            {range} · {run.loops.length} {run.loops.length === 1 ? 'loop' : 'loops'} · {formatDuration(secs)}
-          </p>
-        </div>
+      <section ref={sheetRef} className="rehearse-setup__sheet mk-glass">
+        <h1 className="mk-heading-m">Set up your run</h1>
 
         <div className="rehearse-setup__group">
           <div className="rehearse-setup__label mk-label-mono">
@@ -146,8 +159,6 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
     </main>
   )
 }
-
-const formatDuration = (s: number) => (s < 60 ? `~${Math.max(5, Math.round(s / 5) * 5)} sec` : `~${Math.round(s / 60)} min`)
 
 const SPEED_CHIPS = [0.5, 0.75, 1, 1.25]
 

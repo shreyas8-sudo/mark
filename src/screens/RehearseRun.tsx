@@ -1,14 +1,15 @@
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { Ambient } from '../components/Ambient'
+import { BarCircles } from '../components/BarCircles'
 import { BigCount } from '../components/BigCount'
-import { Button, DeskTopBar, GlassButton, PlayShutter, ShortcutsButton } from '../components/controls'
+import { Button, GlassButton, ModeCarousel, PlayShutter, ShortcutsButton } from '../components/controls'
 import { Icon } from '../components/Icon'
 import { VideoStage } from '../components/VideoStage'
 import { useKeys } from '../hooks/useKeys'
 import { useLayout } from '../hooks/useLayout'
 import { usePlayhead } from '../hooks/usePlayhead'
 import { useVoiceCounts } from '../hooks/useVoiceCounts'
-import { barEnd, barStart, beatLen, COUNTS_PER_BAR, position } from '../lib/beat'
+import { barEnd, barStart, beatLen, beatTime, COUNTS_PER_BAR, position } from '../lib/beat'
 import { countIn } from '../lib/countIn'
 import { IDLE, runReducer } from '../lib/runner'
 import { formatSpeed } from '../lib/speed'
@@ -133,46 +134,47 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
   const [keysOpen, setKeysOpen] = useState(false)
   useKeys({ ' ': togglePlay, r: restart, '[': prev, ']': next, '?': () => setKeysOpen((o) => !o), Escape: onEnd })
 
-  // Phone portrait: the video gets everything above the controls.
-  const footerRef = useRef<HTMLElement>(null)
+  // Jump to a count from the bar circles. In the count-in, that skips the
+  // rest of it and plays from there.
+  const seek = (bar: number, n: number) => {
+    const video = videoRef.current
+    if (!video || !active) return
+    video.currentTime = beatTime((bar - 1) * COUNTS_PER_BAR + n - 1, dance)
+    if (active.phase === 'countIn') dispatch({ type: 'countInDone' })
+  }
+
+  // A vertical clip stops above the dock, so nothing covers the dancer's
+  // feet; a horizontal one fills the screen with the controls over it.
+  const vertical = aspect != null && aspect < 1
+  const dockRef = useRef<HTMLElement>(null)
   const [controlsH, setControlsH] = useState(0)
   useLayoutEffect(() => {
-    const el = footerRef.current
-    if (!el || layout !== 'portrait') return setControlsH(0)
-    // From the top of the controls to the bottom of the screen (includes
-    // the safe-area padding below them).
+    const el = dockRef.current
+    if (!el) return
+    // From the top of the dock to the bottom of the screen (includes the
+    // safe-area padding below it).
     const measure = () => setControlsH(window.innerHeight - el.getBoundingClientRect().top)
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(el)
-    return () => ro.disconnect()
-  }, [layout])
-
-  // The big count: 5-6-7-8 in the accent during the count-in, then the
-  // dance's own counts while the bars play.
-  const pos = position(t, dance)
-  const count =
-    shown != null ? <BigCount count={shown} beat={shown} countIn />
-    : state.phase === 'playing' ? <BigCount count={pos.count} beat={pos.beatIndex} />
-    : <BigCount count={null} beat={0} />
-
-  const doneCard = state.phase === 'done' && (
-    <div className="run-done">
-      <p className="mk-heading-l">Nice run.</p>
-      <Button onClick={restart}>Run it again</Button>
-    </div>
-  )
-  const statusDot = <span className="run-pill__dot" data-live={playing || undefined} />
+    window.addEventListener('resize', measure)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [])
 
   return (
     <div
-      className={`rehearse-run${desktop ? ' desk' : ''}`}
+      className="rehearse-run"
       data-mode="rehearse"
       data-layout={layout}
+      data-orient={aspect == null ? undefined : vertical ? 'v' : 'h'}
       style={{ ...(aspect ? { '--ar': aspect } : {}), '--controls-h': `${controlsH}px` } as CSSProperties}
     >
-      {/* Same position in every layout, so the video never remounts. */}
-      <div className={desktop ? 'desk-frame' : 'rehearse-run__stage'}>
+      <Ambient videoRef={videoRef} />
+      {/* Same element in every layout, so the video never remounts. */}
+      <div className="rehearse-run__stage">
         <VideoStage
           src={src}
           mirror={dance.mirror}
@@ -182,111 +184,63 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
           onTap={togglePlay}
           onLoadedMetadata={(v) => setAspect((dance.crop.w * v.videoWidth) / (dance.crop.h * v.videoHeight))}
         />
-        {desktop && <div className="desk-frame__center">{doneCard}</div>}
+      </div>
+      <div className="rehearse-run__scrim rehearse-run__scrim--top" />
+      <div className="rehearse-run__scrim rehearse-run__scrim--bottom" />
+
+      <header className="rehearse-run__top">
+        <GlassButton icon="back" label="Back to library" onClick={onBack} />
+        <ModeCarousel mode="rehearse" onChange={(m) => m === 'learn' && onLearn()} />
+        {desktop ? (
+          <ShortcutsButton keys={SHORTCUTS} open={keysOpen} onToggle={() => setKeysOpen((o) => !o)} />
+        ) : (
+          <span className="rehearse-run__spacer" aria-hidden />
+        )}
+      </header>
+      <span className="run-pill mk-glass mk-label-mono" aria-live="polite">
+        <span className="run-pill__dot" data-live={playing || undefined} />
+        {pill}
+      </span>
+
+      <div className="rehearse-run__bars">
+        <BarCircles
+          barStart={run.barStart}
+          barEnd={run.barEnd}
+          // Empty during the count-in; they fill only while the bars play.
+          pos={state.phase === 'playing' ? position(t, dance) : null}
+          done={state.phase === 'done'}
+          onSeek={active ? seek : undefined}
+        />
       </div>
 
-      {desktop ? (
-        <>
-          <Ambient videoRef={videoRef} />
-          <DeskTopBar
-            title={dance.name}
-            meta={`Bars ${run.barStart} → ${run.barEnd} · ${Math.round(dance.bpm)} BPM`}
-            mode="rehearse"
-            onBack={onBack}
-            onMode={onLearn}
-            right={<ShortcutsButton keys={SHORTCUTS} open={keysOpen} onToggle={() => setKeysOpen((o) => !o)} />}
-          />
-          <div className="desk-count">{count}</div>
-          {/* One row, ≤72px: bar timeline · transport · loop pill · End */}
-          <footer className="desk-dock">
-            <BeatTimeline
-              barStart={run.barStart}
-              barEnd={run.barEnd}
-              // Empty during the count-in; it fills only while the bars play.
-              t={state.phase === 'playing' ? t : null}
-              grid={dance}
-            />
-            <div className="desk-dock__transport">
-              <GlassButton icon="prev" label="Previous loop" size={40} iconSize={16} onClick={prev} />
-              <GlassButton icon="restart" label="Restart loop" size={40} iconSize={18} onClick={restart} />
-              <PlayShutter playing={playing} onClick={togglePlay} />
-              <GlassButton icon="next" label="Next loop" size={40} iconSize={16} onClick={next} />
-            </div>
-            <div className="desk-dock__end">
-              <span className="run-status mk-label-mono" aria-live="polite">
-                {statusDot}
-                {pill}
-              </span>
-              <button type="button" className="end-btn end-btn--dock mk-body-strong" onClick={onEnd}>
-                <Icon name="close" size={18} />
-                End
-              </button>
-            </div>
-          </footer>
-        </>
-      ) : (
-        <>
-          <div className="rehearse-run__scrim" />
-
-          <div className="rehearse-run__ui">
-            <header className="rehearse-run__top">
-              <span className="run-pill mk-glass mk-label-mono" aria-live="polite">
-                {statusDot}
-                {pill}
-              </span>
-              <span className="rehearse-run__bars mk-label-mono mk-over-video">
-                Bars {run.barStart} → {run.barEnd}
-              </span>
-            </header>
-            <div className="rehearse-run__actions">
-              <button type="button" className="end-btn mk-glass mk-body-strong" onClick={onEnd}>
-                <Icon name="close" size={18} />
-                End rehearsal
-              </button>
-              <GlassButton icon="restart" label="Restart loop" size={50} iconSize={24} onClick={restart} />
-            </div>
-
-            <div className="rehearse-run__middle">
-              {count}
-              {doneCard}
-            </div>
-
-            <footer ref={footerRef} className="rehearse-run__bottom">
-              <div className="loop-chips" role="tablist" aria-label="Loops">
-                {run.loops.map((l, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    role="tab"
-                    aria-selected={active?.loop === i}
-                    aria-label={`Loop ${i + 1}, ${formatSpeed(l.speed)}`}
-                    className="loop-chip mk-glass mk-data-mono"
-                    data-active={active?.loop === i || undefined}
-                    data-done={(state.phase === 'done' || (active && i < active.loop)) || undefined}
-                    onClick={() => dispatch({ type: 'goto', loop: i })}
-                  >
-                    {formatSpeed(l.speed)}
-                  </button>
-                ))}
-              </div>
-              <div className="run-transport">
-                <div className="run-transport__item">
-                  <GlassButton icon="prev" label="Previous loop" size={50} iconSize={18} onClick={prev} />
-                  <span className="mk-label-mono">Prev loop</span>
-                </div>
-                <div className="run-transport__item">
-                  <PlayShutter className="shutter shutter--lg" iconSize={30} playing={playing} onClick={togglePlay} />
-                  <span className="mk-label-mono">{playing ? 'Pause' : 'Play'}</span>
-                </div>
-                <div className="run-transport__item">
-                  <GlassButton icon="next" label="Next loop" size={50} iconSize={18} onClick={next} />
-                  <span className="mk-label-mono">Next loop</span>
-                </div>
-              </div>
-            </footer>
-          </div>
-        </>
+      {/* The 5-6-7-8 count-in is big in the centre; counts 1–8 stay in the
+          circles at the side. */}
+      {shown != null && (
+        <div className="rehearse-run__count-in">
+          <BigCount count={shown} beat={shown} countIn />
+        </div>
       )}
+
+      {state.phase === 'done' && (
+        <div className="run-done">
+          <p className="mk-heading-l">Nice run.</p>
+          <Button onClick={restart}>Run it again</Button>
+        </div>
+      )}
+
+      {/* One glass pill: Prev loop · Restart · Play/Pause · Next loop · End */}
+      <footer ref={dockRef} className="rehearse-run__bottom">
+        <nav className="run-dock mk-glass" aria-label="Transport">
+          <GlassButton icon="prev" label="Previous loop" size={44} iconSize={18} onClick={prev} />
+          <GlassButton icon="restart" label="Restart loop" size={44} iconSize={20} onClick={restart} />
+          <PlayShutter playing={playing} onClick={togglePlay} />
+          <GlassButton icon="next" label="Next loop" size={44} iconSize={18} onClick={next} />
+          <button type="button" className="run-dock__end mk-body-strong" aria-label="End rehearsal" onClick={onEnd}>
+            <Icon name="close" size={18} />
+            End<span className="run-dock__end-long">&nbsp;rehearsal</span>
+          </button>
+        </nav>
+      </footer>
     </div>
   )
 }
@@ -298,41 +252,3 @@ const SHORTCUTS: [string, string][] = [
   ['Esc', 'End rehearsal'],
   ['?', 'Show shortcuts'],
 ]
-
-/** Laptop: one segment per beat across the bar range, filled as it plays. */
-function BeatTimeline({
-  barStart: first,
-  barEnd: last,
-  t,
-  grid,
-}: {
-  barStart: number
-  barEnd: number
-  t: number | null
-  grid: { bpm: number; offset: number }
-}) {
-  const pos = t == null ? null : position(t, grid)
-  const bars = Array.from({ length: last - first + 1 }, (_, i) => first + i)
-  const state = (bar: number, count: number) => {
-    if (!pos) return 'next'
-    if (bar < pos.bar || (bar === pos.bar && count < pos.count)) return 'past'
-    return bar === pos.bar && count === pos.count ? 'now' : 'next'
-  }
-  return (
-    <div className="beat-timeline" role="img" aria-label={pos ? `Bar ${pos.bar}, count ${pos.count}` : 'Not started'}>
-      {bars.map((b) => (
-        <div key={b} className="beat-timeline__bar">
-          <div className="beat-timeline__beats">
-            {Array.from({ length: COUNTS_PER_BAR }, (_, i) => (
-              <span key={i} data-state={state(b, i + 1)} />
-            ))}
-          </div>
-          <span className="mk-label-mono" data-now={pos?.bar === b || undefined}>
-            Bar {b}
-            {pos?.bar === b && ` · Count ${pos.count}`}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}

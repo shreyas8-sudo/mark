@@ -1,0 +1,98 @@
+/* Rehearse bar circles: a column on the side of the screen. --bar-d is the
+   size of an upcoming / played bar; the current one is 2×. */
+.bar-circles {
+  --bar-d: 44px;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  pointer-events: auto;
+}
+
+.bar-circles::-webkit-scrollbar {
+  display: none;
+}
+
+/* margin-block: auto centres the column without clipping a long one. */
+.bar-circles__list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-block: auto;
+  padding-block: 4px;
+}
+
+.bar-circle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--bar-d);
+  height: var(--bar-d);
+  border-radius: 50%;
+  color: var(--mk-text-primary);
+  transition: width 200ms ease, height 200ms ease;
+}
+
+.bar-circle[data-current] {
+  width: calc(var(--bar-d) * 2);
+  height: calc(var(--bar-d) * 2);
+}
+
+.bar-circle svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.5));
+}
+
+.bar-circle path {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.bar-circle__track {
+  stroke: var(--mk-glass-fill-strong);
+}
+
+.bar-circle__fill {
+  stroke: var(--mk-accent-primary);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 140ms ease-out;
+}
+
+.bar-circle__fill[data-on] {
+  stroke-dashoffset: 0;
+}
+
+/* A zero-length dash still draws its round caps as a dot. */
+.bar-circle__fill:not([data-on]) {
+  visibility: hidden;
+}
+
+.bar-circle__num {
+  font: 600 calc(var(--bar-d) * 0.36) / 1 var(--mk-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+
+.bar-circle[data-current] .bar-circle__num {
+  font-size: calc(var(--bar-d) * 0.62);
+}
+
+.bar-circle:disabled {
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-circle,
+  .bar-circle__fill {
+    transition: none;
+  }
+}
