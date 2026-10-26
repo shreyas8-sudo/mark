@@ -1,14 +1,14 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
-import { Icon, type IconName, type IconSize } from './Icon'
+import { Icon, type IconName } from './Icon'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement>
 
 /** Icon size for a round button of `size` px, on the 20 / 24 / 28 scale. */
-const iconFor = (size: number): IconSize => (size >= 56 ? 28 : size >= 44 ? 24 : 20)
+const iconFor = (size: number) => (size >= 56 ? 28 : size >= 44 ? 24 : 20)
 
 /**
  * Round button (back, more, transport). Glass over video; `solid` on a
- * plain background. `on` fills the icon (Loop on, Mirror on).
+ * plain background.
  */
 export function GlassButton({
   icon,
@@ -17,7 +17,6 @@ export function GlassButton({
   size = 40,
   iconSize,
   flip,
-  on,
   solid,
   className = '',
   ...rest
@@ -26,9 +25,8 @@ export function GlassButton({
   glyph?: ReactNode
   label: string
   size?: number
-  iconSize?: IconSize
+  iconSize?: number
   flip?: boolean
-  on?: boolean
   solid?: boolean
 } & ButtonProps) {
   return (
@@ -39,7 +37,7 @@ export function GlassButton({
       style={{ width: size, height: size }}
       {...rest}
     >
-      {icon ? <Icon name={icon} size={iconSize ?? iconFor(size)} flip={flip} on={on} /> : <span className="glyph mk-data-mono">{glyph}</span>}
+      {icon ? <Icon name={icon} size={iconSize ?? iconFor(size)} flip={flip} /> : <span className="glyph mk-data-mono">{glyph}</span>}
     </button>
   )
 }
@@ -50,7 +48,7 @@ export function PlayShutter({
   iconSize = 24,
   className = '',
   ...rest
-}: { playing: boolean; iconSize?: IconSize } & ButtonProps) {
+}: { playing: boolean; iconSize?: number } & ButtonProps) {
   return (
     <button
       type="button"
@@ -83,7 +81,7 @@ export function ModeCarousel({
           disabled={!onChange && mode !== m}
           onClick={() => onChange?.(m)}
         >
-          {m === 'learn' ? 'Learn' : 'Rehearse'}
+          {m}
         </button>
       ))}
     </div>
@@ -177,7 +175,7 @@ export function DeskTopBar({
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
-  return <kbd className="mk-kbd mk-label">{children}</kbd>
+  return <kbd className="mk-kbd mk-label-mono">{children}</kbd>
 }
 
 /** The `?` keyboard-shortcuts popover on laptop layouts. */
@@ -189,7 +187,7 @@ export function ShortcutsButton({ keys, open, onToggle }: { keys: [string, strin
       </button>
       {open && (
         <div className="shortcuts__pop popover" role="dialog" aria-label="Keyboard shortcuts">
-          <span className="popover__head mk-label">Keyboard</span>
+          <span className="popover__head mk-label-mono">Keyboard</span>
           {keys.map(([k, what]) => (
             <p key={k}>
               <Kbd>{k}</Kbd> {what}

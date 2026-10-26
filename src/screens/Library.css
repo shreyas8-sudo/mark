@@ -98,7 +98,7 @@
   top: 10px;
   left: 10px;
   padding: 5px 10px;
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-sm);
   color: var(--mk-text-primary);
   pointer-events: none;
 }
@@ -154,7 +154,7 @@
   display: flex;
   flex-direction: column;
   padding: 6px 0;
-  border-radius: 18px;
+  border-radius: var(--mk-radius-lg);
   background: var(--mk-bg-raised);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }

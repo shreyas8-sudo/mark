@@ -1,6 +1,11 @@
 .mk-icon {
-  display: block;
+  display: inline-block;
   flex: none;
+  background-color: currentColor;
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
 }
 
 button {
@@ -71,10 +76,12 @@ button:focus-visible {
 
 .mode-carousel__option {
   padding: 6px var(--mk-space-3);
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-md);
   border: 1px solid transparent;
   color: var(--mk-text-primary);
-  font: 600 13px/1.2 var(--mk-font-sans);
+  font: 500 13px/1.2 var(--mk-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .mode-carousel__option[aria-selected='true'] {
@@ -135,7 +142,7 @@ button:focus-visible {
   flex: none;
   width: 48px;
   height: 28px;
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-lg);
   background: var(--mk-bg-raised);
   box-shadow: inset 0 0 0 1px var(--mk-border-subtle);
   transition: background 150ms ease;
@@ -166,14 +173,14 @@ button:focus-visible {
   display: flex;
   width: 100%;
   padding: 3px;
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-md);
   background: var(--mk-bg-raised);
 }
 
 .mk-segmented__option {
   flex: 1;
   height: 34px;
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-sm);
   color: var(--mk-text-secondary);
   transition: background 150ms ease, color 150ms ease;
 }
@@ -272,7 +279,7 @@ button:focus-visible {
   align-items: center;
   gap: var(--mk-space-2);
   padding: 10px 18px 10px 12px;
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-md);
   background: var(--mk-bg-raised);
   color: var(--mk-text-primary);
 }
@@ -295,13 +302,20 @@ button:focus-visible {
 }
 
 /* Root of a laptop / TV screen. --ar (the cropped video's aspect) is set
-   inline. v2: no side panels; the video takes the full height between the
-   top bar and a single ≤72px dock, leaving room beside it for the count. */
+   inline. The video takes the full height between the top bar and the
+   waveform dock; the count sits to its left, the tools to its right. */
 .desk {
   --top-h: 80px;
   --dock-h: 72px;
   --frame-h: calc(100dvh - var(--top-h) - var(--dock-h) - 24px);
-  --frame-w: min(calc(100vw - 480px), calc(var(--frame-h) * var(--ar, 0.5625)));
+  --frame-w: min(calc(100vw - 560px), calc(var(--frame-h) * var(--ar, 0.5625)));
+}
+
+/* Horizontal clip: as big as it goes, edge to edge above the dock. The
+   count, tools and transport float over it as glass. */
+.desk[data-wide] {
+  --frame-h: calc(100dvh - var(--top-h) - var(--dock-h));
+  --frame-w: min(100vw, calc(var(--frame-h) * var(--ar)));
 }
 
 .desk-frame {
@@ -313,18 +327,91 @@ button:focus-visible {
   aspect-ratio: var(--ar, 0.5625);
   max-height: var(--frame-h);
   transform: translateX(-50%);
-  border-radius: var(--mk-radius-lg);
-  overflow: hidden;
-  background: var(--mk-bg-base);
 }
 
-/* Small glass tools floating over the top-right of the video. */
+.desk-frame .video-stage {
+  border-radius: var(--mk-radius-lg);
+}
+
+.desk[data-wide] .desk-frame .video-stage {
+  border-radius: 0;
+}
+
+/* Count: left of the frame, vertically centred on it. */
+.desk-count {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 40px);
+  transform: translateY(-50%);
+}
+
+.desk-count .big-count {
+  --count-size: clamp(160px, 14vw, 200px);
+}
+
+/* Tool column: right of the frame, vertically centred. */
 .desk-frame__tools {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 50%;
+  left: calc(100% + 16px);
+  transform: translateY(-50%);
+}
+
+/* Transport: one bar over the bottom of the video, inset 12px. */
+.desk-frame__transport {
+  position: absolute;
+  z-index: 2;
+  inset: auto 12px 12px;
+}
+
+/* Speed and Got it: just outside the frame's bottom corners, level with
+   the transport bar. */
+.desk-frame__speed,
+.desk-frame__got-it {
+  position: absolute;
+  bottom: 12px;
+  height: 60px;
   display: flex;
-  gap: var(--mk-space-2);
+  align-items: center;
+}
+
+.desk-frame__speed {
+  right: calc(100% + 16px);
+}
+
+.desk-frame__got-it {
+  left: calc(100% + 16px);
+}
+
+/* Over a horizontal clip, all of it moves inside the frame. */
+.desk[data-wide] .desk-count {
+  right: auto;
+  left: 32px;
+}
+
+.desk[data-wide] .desk-frame__tools {
+  left: auto;
+  right: 20px;
+}
+
+.desk[data-wide] .desk-frame__speed {
+  right: auto;
+  left: 20px;
+  bottom: 20px;
+}
+
+.desk[data-wide] .desk-frame__got-it {
+  left: auto;
+  right: 20px;
+  bottom: 20px;
+}
+
+.desk[data-wide] .desk-frame__transport {
+  left: 50%;
+  right: auto;
+  bottom: 20px;
+  width: min(480px, 100% - 360px);
+  transform: translateX(-50%);
 }
 
 .glass-btn.is-on {
@@ -336,28 +423,15 @@ button:focus-visible {
   color: var(--mk-text-inverse);
 }
 
-/* The big count sits beside the frame, vertically centred on it. */
-.desk-count {
-  position: absolute;
-  z-index: 1;
-  top: calc(var(--top-h) + var(--frame-h) / 2);
-  right: calc(50% + var(--frame-w) / 2 + 32px);
-  transform: translateY(-50%);
-}
-
-.desk-count .big-count {
-  --count-size: clamp(160px, 14vw, 200px);
-}
-
+/* The waveform strip, docked along the bottom of the screen. */
 .desk-dock {
   position: absolute;
   inset: auto 0 0;
   z-index: 2;
   height: var(--dock-h);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  display: flex;
+  justify-content: center;
   align-items: center;
-  gap: var(--mk-space-6);
   padding: 0 32px;
   border-top: 1px solid var(--mk-border-subtle);
   background: var(--mk-bg-surface);
@@ -368,6 +442,7 @@ button:focus-visible {
   display: flex;
   align-items: center;
   gap: var(--mk-space-3);
+  width: min(100%, 960px);
   min-width: 0;
 }
 
@@ -376,40 +451,17 @@ button:focus-visible {
   flex: 1;
 }
 
-.desk-dock__transport {
-  display: flex;
-  align-items: center;
-  gap: var(--mk-space-3);
-}
-
-.desk-dock__end {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--mk-space-3);
-}
-
 .desk-dock .glass-btn {
   background: var(--mk-bg-raised);
   box-shadow: none;
   backdrop-filter: none;
 }
 
-.desk-dock .glass-btn.is-on {
-  background: var(--mk-accent-primary);
-  color: var(--mk-text-inverse);
-}
-
-.desk-dock .shutter {
-  width: 48px;
-  height: 48px;
-}
-
 .mk-kbd {
   display: inline-block;
   min-width: 22px;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--mk-radius-sm);
   background: var(--mk-glass-fill-strong);
   color: var(--mk-text-primary);
   text-align: center;
@@ -442,7 +494,7 @@ button:focus-visible {
   gap: 10px;
   width: max-content;
   padding: var(--mk-space-4) 18px;
-  border-radius: 20px;
+  border-radius: var(--mk-radius-lg);
   background: var(--mk-bg-raised);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }

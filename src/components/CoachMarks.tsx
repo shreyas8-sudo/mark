@@ -71,7 +71,7 @@ export function CoachMarks({ mode, marks, onDone }: { mode: CoachMode; marks: Co
       <button type="button" className="coach__scrim" aria-label="Next tip" onClick={next} />
       {spot && <div className="coach__spot" style={spot} />}
       <div className="coach__bubble" style={{ ...bubbleStyle, width: BUBBLE_W }} data-above={above || undefined}>
-        <span className="coach__step mk-label">
+        <span className="coach__step mk-label-mono">
           {index + 1} of {marks.length}
         </span>
         <p className="mk-body-strong">{mark.text}</p>

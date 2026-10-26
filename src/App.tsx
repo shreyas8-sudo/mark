@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { DEMO } from './data/demo'
+import { DEMOS } from './data/demo'
 import { revokeObjectUrl, useObjectUrl } from './hooks/useObjectUrl'
 import { unlockAudio } from './lib/countIn'
 import { barCount } from './lib/beat'
@@ -23,7 +23,7 @@ type Screen =
   | { name: 'library' }
   | { name: 'ready'; file: File }
   | { name: 'firstBeat'; draft: Dance; audio?: AudioBuffer; from: 'ready' | 'library' }
-  | { name: 'counts'; draft: Dance; audio?: AudioBuffer; from: 'ready' | 'library'; noBeat: boolean }
+  | { name: 'counts'; draft: Dance; from: 'ready' | 'library'; noBeat: boolean }
   | { name: 'frame'; draft: Dance; from: 'ready' | 'learn' | 'library' }
   | { name: 'learn'; id: string }
   | { name: 'rehearse'; id: string; running: boolean }
@@ -38,7 +38,7 @@ export default function App() {
       .catch((err) => {
         // Private browsing / blocked storage: still usable, just not saved.
         console.error(err)
-        setDances([DEMO])
+        setDances([...DEMOS])
       })
   }, [])
 
@@ -96,7 +96,7 @@ export default function App() {
         onDone={(draft, audio, setCounts) =>
           setScreen(
             setCounts
-              ? { name: 'counts', draft, audio, from: 'ready', noBeat: true }
+              ? { name: 'counts', draft, from: 'ready', noBeat: true }
               : { name: 'firstBeat', draft, audio, from: 'ready' },
           )
         }
@@ -125,19 +125,18 @@ export default function App() {
             setScreen({ name: 'library' })
           }
         }}
-        onFixCounts={(decoded) => setScreen({ name: 'counts', draft, audio: decoded, from, noBeat: false })}
+        onFixCounts={() => setScreen({ name: 'counts', draft, from, noBeat: false })}
       />
     )
   }
 
   if (screen.name === 'counts' && src) {
-    const { draft, from, audio, noBeat } = screen
+    const { draft, from, noBeat } = screen
     return (
       <SetCounts
         key={draft.id}
         dance={draft}
         src={src}
-        audio={audio}
         noBeat={noBeat}
         step={from === 'ready' ? 'Step 1 of 2' : undefined}
         onBack={() => {
@@ -247,7 +246,7 @@ export default function App() {
         if (d) setScreen({ name: 'counts', draft: d, from: 'library', noBeat: false })
       }}
       onDelete={remove}
-      onRestoreDemo={() => add({ ...DEMO, createdAt: Date.now() })}
+      onRestoreDemo={() => [...DEMOS].reverse().forEach((d) => add({ ...d, createdAt: Date.now() }))}
     />
   )
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 
 import wordmarkDot from '../assets/wordmark-dot.svg'
 import { Button } from '../components/controls'
 import { Icon } from '../components/Icon'
-import { DEMO } from '../data/demo'
+import { demoById } from '../data/demo'
 import { useObjectUrl } from '../hooks/useObjectUrl'
 import { formatTime } from '../lib/format'
 import type { Dance } from '../types'
@@ -85,7 +85,7 @@ export function Library({ dances, onOpen, onAdd, onRename, onChangeFrame, onChan
         </div>
       ) : (
         <>
-          <p className="library__meta mk-label">
+          <p className="library__meta mk-label-mono">
             {dances.length} {dances.length === 1 ? 'dance' : 'dances'} · On this device
           </p>
           <ul className="library__grid">
@@ -187,7 +187,7 @@ function DanceCard({ dance: d, menuOpen, renaming, onOpen, onMenu, onCloseMenu, 
       <button type="button" className="dance-card__thumb" aria-label={`Open ${d.name}`} onClick={onOpen}>
         {thumb && <img src={thumb} alt="" style={thumbStyle} />}
       </button>
-      {d.id === DEMO.id && <span className="dance-card__tag mk-glass mk-label">Demo</span>}
+      {demoById(d.id) && <span className="dance-card__tag mk-glass mk-label-mono">Demo</span>}
       <button type="button" className="dance-card__more mk-glass" aria-label={`Options for ${d.name}`} aria-expanded={menuOpen} onClick={toggleMenu}>
         <Icon name="more" size={20} />
       </button>

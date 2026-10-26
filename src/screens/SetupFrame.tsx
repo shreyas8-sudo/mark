@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type PointerEvent, type WheelEvent } from 'react'
-import { Button, GlassButton, Segmented, Toggle } from '../components/controls'
+import { Button, GlassButton, Toggle } from '../components/controls'
 import { Icon } from '../components/Icon'
 import { useVideoRef } from '../hooks/useVideoRef'
 import cornerBl from '../assets/crop/corner-bl.svg'
@@ -30,6 +30,10 @@ type Props = {
 }
 
 const CENTRE: Framing = { z: 1, cx: 0.5, cy: 0.5 }
+const SHAPES: { value: Orientation; label: string }[] = [
+  { value: 'vertical', label: 'Vertical' },
+  { value: 'horizontal', label: 'Horizontal' },
+]
 const BOX_INSET = 24
 
 /** 03 Setup · Frame: pinch/drag (touch) or drag/scroll (mouse) the video under a fixed box. */
@@ -148,7 +152,7 @@ export function SetupFrame({ src, initial, onBack, onSave }: Props) {
       <header className="setup__top">
         <GlassButton icon="back" label="Back" onClick={onBack} />
         <span className="mk-body-strong">Set up</span>
-        <span className="setup__hint mk-label">Pinch · Drag</span>
+        <span className="setup__hint mk-label-mono">Pinch · Drag</span>
       </header>
 
       <section className="setup__sheet">
@@ -156,15 +160,25 @@ export function SetupFrame({ src, initial, onBack, onSave }: Props) {
         <p className="mk-body-small">
           Zoom in on who you’re learning from. You can change it later.
         </p>
-        <Segmented
-          label="Frame shape"
-          value={orientation}
-          options={[
-            { value: 'vertical', label: 'Vertical' },
-            { value: 'horizontal', label: 'Horizontal' },
-          ]}
-          onChange={switchOrientation}
-        />
+        <div className="setup__row">
+          <span className="mk-body-strong">Shape</span>
+          <div className="frame-shape" role="radiogroup" aria-label="Frame shape">
+            {SHAPES.map((s) => (
+              <button
+                key={s.value}
+                type="button"
+                role="radio"
+                aria-checked={orientation === s.value}
+                aria-label={s.label}
+                title={s.label}
+                className="frame-shape__option"
+                onClick={() => switchOrientation(s.value)}
+              >
+                <span className={`frame-shape__glyph frame-shape__glyph--${s.value}`} />
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="setup__row">
           <Icon name="mirror" size={24} />
           <span className="mk-body-strong">Mirror video</span>

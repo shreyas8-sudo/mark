@@ -30,7 +30,7 @@
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
   /* minmax(0) so the long bar strip scrolls instead of widening the page */
   grid-template-columns: minmax(0, 1fr);
   padding:
@@ -53,14 +53,17 @@
   justify-content: space-between;
 }
 
-/* ---- Tool row: under the header (portrait) ---- */
+/* ---- Tool column: right edge, centred on the video (which ends at the
+   top of the controls) ---- */
 .learn__tools {
-  display: flex;
-  justify-content: center;
-  padding-top: var(--mk-space-3);
+  position: absolute;
+  z-index: 1;
+  right: max(env(safe-area-inset-right), var(--mk-space-3));
+  top: calc((100% - var(--controls-h, 0px)) / 2);
+  transform: translateY(-50%);
 }
 
-/* ---- Middle: the running count at the side ---- */
+/* ---- Middle: the running count, top left ---- */
 .learn__middle {
   position: relative;
   display: flex;
@@ -97,13 +100,45 @@
   margin-inline: auto;
 }
 
-/* ---- Transport ---- */
-.transport {
+/* ---- Transport: one long bar over the bottom of the video ---- */
+.transport-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: min(100%, 300px);
-  margin: 0 auto var(--mk-space-2);
+  justify-content: space-around;
+  gap: var(--mk-space-1);
+  padding: 6px;
+  border-radius: var(--mk-radius-lg);
+  pointer-events: auto;
+}
+
+/* Buttons inside the bar are bare icons; the bar is the glass. */
+.transport-bar .glass-btn {
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.transport-bar .glass-btn.is-on {
+  background: var(--mk-accent-primary);
+  color: var(--mk-text-inverse);
+}
+
+.transport-bar .shutter {
+  width: 48px;
+  height: 48px;
+}
+
+/* Phone: speed · transport · Got it, in one row over the video */
+.learn__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-2);
+}
+
+.learn__controls .transport-bar {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ---- Popovers (placed by AnchoredPopover, under their button) ---- */
@@ -113,7 +148,7 @@
   display: flex;
   flex-direction: column;
   padding: var(--mk-space-4) 18px 18px;
-  border-radius: 24px;
+  border-radius: var(--mk-radius-lg);
   background: var(--mk-overlay-scrim-strong);
   -webkit-backdrop-filter: blur(var(--mk-glass-blur)) saturate(160%);
   backdrop-filter: blur(var(--mk-glass-blur)) saturate(160%);
@@ -226,12 +261,11 @@
 }
 
 /* ---------- 09 Learn · Landscape (phone on its side) ----------
-   Camera-app layout: tools row top right, shutter column on the right
-   edge, bar strip bottom left. Same elements as portrait,
-   re-placed on a grid. */
+   Same pieces as portrait, tighter: count top left, tool column on the
+   right edge, speed · transport · Got it over the bottom of the video. */
 .learn__scrim--right {
   inset: 0 0 0 auto;
-  width: 160px;
+  width: 120px;
   height: auto;
   background: linear-gradient(to left, var(--mk-overlay-scrim-strong), transparent);
 }
@@ -241,52 +275,36 @@
 }
 
 .learn[data-layout='landscape'] .learn__ui {
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto 1fr auto;
-  column-gap: var(--mk-space-6);
-  row-gap: var(--mk-space-3);
   padding:
-    max(env(safe-area-inset-top), 20px)
-    max(env(safe-area-inset-right), 30px)
-    max(env(safe-area-inset-bottom), 16px)
+    max(env(safe-area-inset-top), 12px)
+    max(env(safe-area-inset-right), 20px)
+    max(env(safe-area-inset-bottom), 12px)
     max(env(safe-area-inset-left), 20px);
 }
 
 .learn[data-layout='landscape'] .learn__top {
-  grid-area: 1 / 1;
   justify-content: flex-start;
   gap: var(--mk-space-12);
 }
 
-.learn[data-layout='landscape'] .learn__middle,
-.learn[data-layout='landscape'] .learn__bottom {
-  display: contents;
-}
-
-.learn[data-layout='landscape'] .learn__tools {
-  grid-area: 1 / 1;
-  justify-self: end;
-  padding: 0;
-}
-
 .learn[data-layout='landscape'] .big-count {
-  grid-area: 2 / 1;
-  align-self: start;
-  justify-self: start;
+  --count-size: 64px;
+}
+
+.learn[data-layout='landscape'] .learn__bottom {
+  gap: var(--mk-space-2);
+}
+
+.learn[data-layout='landscape'] .transport-bar {
+  padding: 2px 4px;
+}
+
+.learn[data-layout='landscape'] .transport-bar .shutter {
+  width: 40px;
+  height: 40px;
 }
 
 .learn[data-layout='landscape'] .learn__strip {
-  grid-area: 3 / 1;
-  margin: 0;
-  max-width: 640px;
-}
-
-.learn[data-layout='landscape'] .transport {
-  grid-area: 1 / 2 / -1 / 3;
-  flex-direction: column;
-  justify-content: center;
-  gap: 18px;
-  width: auto;
   margin: 0;
 }
 
@@ -299,10 +317,6 @@
   user-select: auto;
 }
 
-/* The tool row floats over the top of the frame, z above the count-in. */
-.learn[data-layout='desktop'] .desk-frame__tools {
-  z-index: 2;
-}
 
 /* ---- Got it ✓ ---- */
 .got-it.is-learned {
@@ -312,8 +326,9 @@
 
 .got-it-pill {
   gap: var(--mk-space-2);
+  white-space: nowrap;
   padding: 10px 18px 10px 14px;
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-md);
 }
 
 .got-sheet {
@@ -418,19 +433,20 @@
   gap: var(--mk-space-3);
   max-width: calc(100% - 32px);
   padding: var(--mk-space-2) var(--mk-space-2) var(--mk-space-2) var(--mk-space-4);
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-lg);
   color: var(--mk-text-primary);
   white-space: nowrap;
   animation: nudge-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* Laptop: inside the frame, just above the transport bar */
 .learn[data-layout='desktop'] .nudge {
-  bottom: calc(var(--dock-h) + 16px);
+  bottom: 88px;
 }
 
 .nudge__try {
   padding: 6px var(--mk-space-4);
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-md);
   background: var(--mk-accent-primary);
   color: var(--mk-text-inverse);
 }

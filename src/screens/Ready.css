@@ -15,7 +15,7 @@
   flex: 1 1 380px;
   min-height: 200px;
   max-height: 420px;
-  border-radius: 28px;
+  border-radius: var(--mk-radius-xl);
   overflow: hidden;
   background: var(--mk-bg-surface);
 }

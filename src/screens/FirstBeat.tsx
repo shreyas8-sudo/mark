@@ -25,7 +25,7 @@ type Props = {
   onBack: () => void
   onSave: (offset: number) => void
   /** The counts are wrong (not just the 1): set 1 and 8 by hand. */
-  onFixCounts: (audio: AudioBuffer | undefined) => void
+  onFixCounts: () => void
 }
 
 /** Setup · First beat: confirm (or move) where count 1 lands. */
@@ -184,7 +184,7 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave, onFi
         <header className="first-beat__top">
           <GlassButton icon="back" label="Back" onClick={onBack} />
           <span className="mk-body-strong mk-over-video">Set up</span>
-          {step && <span className="first-beat__step mk-label mk-over-video">{step}</span>}
+          {step && <span className="first-beat__step mk-label-mono mk-over-video">{step}</span>}
         </header>
       </div>
 
@@ -211,7 +211,7 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave, onFi
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
         >
-          {peaks ? <Waveform peaks={peaks} className="beat-wave__canvas" /> : <span className="beat-wave__loading mk-label">Listening…</span>}
+          {peaks ? <Waveform peaks={peaks} className="beat-wave__canvas" /> : <span className="beat-wave__loading mk-label-mono">Listening…</span>}
           {ticks.map((tk) => (
             <span key={tk.time.toFixed(4)} className="beat-wave__tick" data-one={tk.count === 1 || undefined} style={{ left: `${x(tk.time)}%` }}>
               {tk.count != null && tk.count !== 1 && <span className="mk-label-mono">{tk.count}</span>}
@@ -244,7 +244,7 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave, onFi
           className="first-beat__fix mk-body-small"
           onClick={() => {
             stopPreview()
-            onFixCounts(audio ?? undefined)
+            onFixCounts()
           }}
         >
           Off? Count it yourself

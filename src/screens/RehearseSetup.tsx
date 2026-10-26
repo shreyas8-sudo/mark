@@ -86,7 +86,7 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
         <h1 className="mk-heading-m">Your run</h1>
 
         <div className="rehearse-setup__group" data-coach="run-bars">
-          <div className="rehearse-setup__label mk-label">
+          <div className="rehearse-setup__label mk-label-mono">
             <span>Bars</span>
             <span className="rehearse-setup__hint">Drag the ends</span>
           </div>
@@ -118,30 +118,38 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
         </div>
 
         <div className="rehearse-setup__group" data-coach="loops">
-          <span className="rehearse-setup__label mk-label">Loops</span>
-          {run.loops.map((loop, i) => (
-            <div key={i} className="loop-row">
-              <span className="loop-row__index mk-data-mono">{String(i + 1).padStart(2, '0')}</span>
-              <span className="loop-row__speed mk-data-mono">{formatSpeed(loop.speed)}</span>
-              {loop.plays > 1 && <span className="loop-row__plays mk-data-mono">× {loop.plays}</span>}
-              <button
-                type="button"
-                className="loop-row__edit mk-label"
-                aria-label={`Edit loop ${i + 1}`}
-                onClick={() => setSheet({ index: i })}
-              >
-                Speed ›
-              </button>
-              <button
-                type="button"
-                className="loop-row__delete"
-                aria-label={`Delete loop ${i + 1}`}
-                onClick={() => setLoops(run.loops.filter((_, j) => j !== i))}
-              >
-                <Icon name="trash" size={20} />
-              </button>
-            </div>
-          ))}
+          <span className="rehearse-setup__label mk-label-mono">Loops</span>
+          <div className="loop-cards">
+            {run.loops.map((loop, i) => (
+              <div key={i} className="loop-card">
+                <div className="loop-card__row">
+                  <span className="loop-card__index mk-data-mono">{String(i + 1).padStart(2, '0')}</span>
+                  <button
+                    type="button"
+                    className="loop-card__icon"
+                    aria-label={`Delete loop ${i + 1}`}
+                    onClick={() => setLoops(run.loops.filter((_, j) => j !== i))}
+                  >
+                    <Icon name="close" />
+                  </button>
+                </div>
+                <div className="loop-card__row">
+                  <span className="loop-card__speed">
+                    {formatSpeed(loop.speed)}
+                    {loop.plays > 1 && <span className="loop-card__plays mk-data-mono">× {loop.plays}</span>}
+                  </span>
+                  <button
+                    type="button"
+                    className="loop-card__icon"
+                    aria-label={`Edit loop ${i + 1}: speed and plays`}
+                    onClick={() => setSheet({ index: i })}
+                  >
+                    <Icon name="edit" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
           <button type="button" className="rehearse-setup__add mk-body-strong" onClick={() => setSheet({ index: null })}>
             <Icon name="add" size={20} />
             Add loop
@@ -209,7 +217,7 @@ function LoopSheet({
 
         <div className="loop-sheet__speed">
           <div className="loop-sheet__speed-head">
-            <span className="mk-label">Speed</span>
+            <span className="mk-label-mono">Speed</span>
             <output className="mk-heading-l">{formatSpeed(speed)}</output>
           </div>
           <input

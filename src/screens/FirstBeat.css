@@ -124,7 +124,7 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 2px 7px;
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-sm);
   background: var(--mk-accent-primary);
   color: var(--mk-text-inverse);
 }
@@ -171,36 +171,50 @@
   opacity: 0.6;
 }
 
-/* ---- Set your counts: 1 and 8 on a pannable window ---- */
-.set-counts__wave-row {
+/* ---- Mark your counts: Mark 1 and Mark 8 in one playthrough ---- */
+.set-counts__marks {
+  display: flex;
+  gap: var(--mk-space-4);
+  font-size: 13px;
+  color: var(--mk-text-tertiary);
+}
+
+.set-counts__marks [data-set] {
+  color: var(--mk-accent-soft);
+}
+
+.set-counts__bpm {
+  margin-left: auto;
+  color: var(--mk-text-secondary);
+}
+
+.set-counts__rate {
   display: flex;
   align-items: center;
+  gap: var(--mk-space-3);
+}
+
+.set-counts__rate .mk-body-strong {
+  flex: 1;
+}
+
+.set-counts__rate .mk-segmented {
+  width: 160px;
+}
+
+.set-counts__go {
   gap: var(--mk-space-2);
 }
 
-.set-counts__wave-row .glass-btn {
-  background: var(--mk-bg-raised);
-  box-shadow: none;
-  backdrop-filter: none;
+.set-counts__mark {
+  font-size: 17px;
 }
 
-.set-counts__wave-row .glass-btn:disabled {
-  opacity: 0.4;
-}
-
-.set-counts__wave {
-  flex: 1;
-  min-width: 0;
-}
-
-/* The mark not being placed right now */
-.beat-wave__marker[data-inactive] {
-  background: var(--mk-accent-soft);
-  opacity: 0.7;
-}
-
-.beat-wave__marker[data-inactive] .beat-wave__flag {
-  background: var(--mk-accent-soft);
+/* The spoken count during the preview, top left of the video */
+.set-counts__count {
+  position: absolute;
+  top: calc(max(env(safe-area-inset-top), var(--mk-space-4)) + 56px);
+  left: 20px;
 }
 
 .first-beat__sheet > .first-beat__fix {

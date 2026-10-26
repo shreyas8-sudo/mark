@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { DEMO } from '../data/demo'
+import { DEMO_PEAKS } from '../data/demo'
 import { decodeAudio } from '../lib/analyze'
 import { computePeaks } from '../lib/peaks'
 import type { Dance } from '../types'
 
-let demoPeaks: Promise<Float32Array> | null = null
+const demoPeaks = new Map<string, Promise<Float32Array>>()
 
 /**
  * The dance's waveform peaks: cached on the dance, shipped as JSON for the
@@ -22,16 +22,22 @@ export function usePeaks(dance: Dance, onComputed?: (peaks: Float32Array) => voi
   useEffect(() => {
     if (cached) return
     let live = true
-    const job =
-      dance.id === DEMO.id
-        ? (demoPeaks ??= fetch('/demo/peaks.json')
-            .then((r) => r.json() as Promise<number[]>)
-            .then((a) => Float32Array.from(a)))
-        : decodeAudio(dance.video).then((audio) => {
-            const p = computePeaks(audio.getChannelData(0))
-            onComputedRef.current?.(p)
-            return p
-          })
+    const shipped = DEMO_PEAKS[dance.id]
+    if (shipped && !demoPeaks.has(dance.id)) {
+      demoPeaks.set(
+        dance.id,
+        fetch(shipped)
+          .then((r) => r.json() as Promise<number[]>)
+          .then((a) => Float32Array.from(a)),
+      )
+    }
+    const job = shipped
+      ? demoPeaks.get(dance.id)!
+      : decodeAudio(dance.video).then((audio) => {
+          const p = computePeaks(audio.getChannelData(0))
+          onComputedRef.current?.(p)
+          return p
+        })
     job.then((peaks) => live && setLoaded({ id: dance.id, peaks })).catch(console.error)
     return () => {
       live = false

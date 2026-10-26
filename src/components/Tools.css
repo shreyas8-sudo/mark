@@ -6,6 +6,11 @@
   pointer-events: auto;
 }
 
+.tool-row--column {
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* Text in a tool button ("5678", "0.5×") */
 .tool-btn .glyph {
   font: 500 11px/1 var(--mk-font-mono);

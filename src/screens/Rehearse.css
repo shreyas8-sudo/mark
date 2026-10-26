@@ -51,7 +51,7 @@
   gap: 14px;
   padding: 20px 20px max(env(safe-area-inset-bottom), 24px);
   border-radius: var(--mk-radius-xl) var(--mk-radius-xl) 0 0;
-  background: var(--mk-bg-raised);
+  background: var(--mk-bg-surface);
 }
 
 @media (min-width: 768px), (orientation: landscape) {
@@ -111,20 +111,13 @@
   --strip-h: 40px;
 }
 
-/* Cards and loop rows. Inside the raised setup sheet they sit a step
-   darker, so they still read as cards. */
-.rehearse-setup__sheet .rehearse-card,
-.rehearse-setup__sheet .loop-row {
-  background: var(--mk-bg-surface);
-}
-
-/* Cards and loop rows */
+/* Cards: raised, on the setup sheet's surface */
 .rehearse-card {
   display: flex;
   align-items: center;
   gap: var(--mk-space-3);
   padding: var(--mk-space-3) var(--mk-space-4);
-  border-radius: 16px;
+  border-radius: var(--mk-radius-lg);
   background: var(--mk-bg-raised);
 }
 
@@ -146,38 +139,56 @@
   color: var(--mk-text-secondary);
 }
 
-.loop-row {
+/* Loop cards: number and delete on top, the speed (big) and edit below. */
+.loop-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.loop-card {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: var(--mk-space-2) var(--mk-space-2) var(--mk-space-2) var(--mk-space-4);
-  border-radius: 16px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--mk-space-6);
+  padding: var(--mk-space-3) var(--mk-space-2) var(--mk-space-3) var(--mk-space-4);
+  border-radius: var(--mk-radius-lg);
   background: var(--mk-bg-raised);
 }
 
-.loop-row__index {
+.loop-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mk-space-2);
+}
+
+.loop-card__index {
   color: var(--mk-text-tertiary);
 }
 
-.loop-row__speed {
+.loop-card__speed {
+  display: flex;
+  align-items: baseline;
+  gap: var(--mk-space-2);
+  min-width: 0;
+  font: 400 44px/1 var(--mk-font-sans);
+  letter-spacing: -0.03em;
   color: var(--mk-accent-soft);
+  white-space: nowrap;
 }
 
-.loop-row__plays {
+.loop-card__plays {
   color: var(--mk-text-secondary);
+  letter-spacing: 0;
 }
 
-.loop-row__edit {
-  margin-left: auto;
-  padding: var(--mk-space-2) 0;
-  color: var(--mk-text-tertiary);
-}
-
-.loop-row__delete {
+.loop-card__icon {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  flex: none;
+  width: 40px;
+  height: 40px;
   border-radius: var(--mk-radius-full);
   color: var(--mk-text-secondary);
 }
@@ -272,7 +283,7 @@
 
 .speed-chip {
   padding: var(--mk-space-2) 14px;
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-md);
   background: var(--mk-bg-surface);
   color: var(--mk-text-primary);
 }
@@ -380,7 +391,7 @@
   align-items: center;
   gap: var(--mk-space-2);
   padding: var(--mk-space-2) 14px;
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-md);
   color: var(--mk-text-primary);
 }
 
@@ -479,7 +490,7 @@
   align-items: center;
   gap: var(--mk-space-2);
   padding: 6px 6px 6px 10px;
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-lg);
   pointer-events: auto;
 }
 
@@ -505,7 +516,7 @@
   height: 44px;
   margin-left: var(--mk-space-1);
   padding: 0 18px 0 14px;
-  border-radius: var(--mk-radius-full);
+  border-radius: var(--mk-radius-md);
   background: var(--mk-glass-fill);
   color: var(--mk-text-primary);
   white-space: nowrap;

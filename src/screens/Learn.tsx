@@ -340,29 +340,60 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
       </button>
     </div>
   )
-  // Same buttons, same order, on phone and laptop.
+  // Laptop with a vertical clip: the controls sit beside the video on the
+  // plain background, so they're solid. Over video they're glass.
+  const wide = aspect != null && aspect > 1
+  const solid = desktop && !wide
+  // Speed sits apart (bottom left of the video), so the column holds the rest.
   const tools: Tool[] = [
-    {
-      id: 'speed',
-      label: `Speed ${formatSpeed(dance.speed)}`,
-      glyph: formatSpeed(dance.speed),
-      open: popover?.name === 'speed',
-      coach: 'speed',
-      onClick: (b) => openAt('speed', b),
-    },
     { id: 'sound', label: 'Sound', icon: 'sound', open: popover?.name === 'sound', onClick: (b) => openAt('sound', b) },
     { id: 'mirror', label: 'Mirror', icon: 'mirror', on: dance.mirror, onClick: toggleMirror },
     { id: 'count-in', label: 'Count-in', glyph: '5678', on: dance.countIn, onClick: toggleCountIn },
-    { id: 'loop', label: loopBar != null ? 'Stop looping' : 'Loop this bar', icon: 'loop', on: loopBar != null, onClick: toggleLoop },
     { id: 'frame', label: 'Edit frame', icon: 'frame', onClick: onEditFrame },
   ]
-  const toolRow = <ToolRow tools={tools} size={layout === 'landscape' ? 34 : 40} />
+  const toolSize = layout === 'landscape' ? 34 : desktop ? 44 : 40
+  const toolColumn = <ToolRow tools={tools} size={toolSize} solid={solid} vertical />
+  const speedButton = (
+    <GlassButton
+      glyph={formatSpeed(dance.speed)}
+      label={`Speed ${formatSpeed(dance.speed)}`}
+      title="Speed"
+      size={toolSize}
+      solid={solid}
+      className={`tool-btn speed-btn${popover?.name === 'speed' ? ' is-open' : ''}`}
+      aria-expanded={popover?.name === 'speed'}
+      data-coach="speed"
+      onClick={(e) => openAt('speed', e.currentTarget)}
+    />
+  )
+  // One long bar over the bottom of the video, on every layout.
+  const barBtn = layout === 'landscape' ? 34 : desktop ? 40 : 36
+  const transportBar = (
+    <div className="transport-bar mk-glass">
+      <GlassButton icon="restart" label="Restart" size={barBtn} onClick={restart} />
+      <GlassButton icon="prev" label="Previous bar" size={barBtn} onClick={prevBar} />
+      <PlayShutter playing={playing} onClick={togglePlay} />
+      <GlassButton icon="next" label="Next bar" size={barBtn} onClick={nextBar} />
+      <GlassButton
+        icon="loop"
+        size={barBtn}
+        label={loopBar != null ? 'Stop looping' : 'Loop this bar'}
+        className={loopBar != null ? 'is-on' : ''}
+        aria-pressed={loopBar != null}
+        onClick={toggleLoop}
+      />
+    </div>
+  )
   const thisBarLearned = dance.learned.includes(loopBar ?? currentBar)
-  const gotItButton = (size = 40) => (
+  const gotItButton = desktop ? (
+    <Button className={`got-it-pill${thisBarLearned ? ' is-learned' : ''}`} data-coach="got-it" onClick={gotIt}>
+      <Icon name="check" size={20} /> Got it
+    </Button>
+  ) : (
     <GlassButton
       icon="check"
       label="Got it"
-      size={size}
+      size={toolSize}
       className={`got-it${thisBarLearned ? ' is-learned' : ''}`}
       data-coach="got-it"
       onClick={gotIt}
@@ -395,6 +426,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
       className={`learn${desktop ? ' desk' : ''}`}
       data-mode="learn"
       data-layout={layout}
+      data-wide={wide || undefined}
       style={{ ...(aspect ? { '--ar': aspect } : {}), '--controls-h': `${controlsH}px` } as CSSProperties}
     >
       {/* The video stays at this position in every layout so resizing or
@@ -416,7 +448,17 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
           }}
         />
         {countInOverlay}
-        {desktop && <div className="desk-frame__tools">{toolRow}</div>}
+        {/* Laptop: everything is placed around (or over) the frame. */}
+        {desktop && (
+          <>
+            <div className="desk-count">{count}</div>
+            <div className="desk-frame__tools">{toolColumn}</div>
+            <div className="desk-frame__speed">{speedButton}</div>
+            <div className="desk-frame__transport">{transportBar}</div>
+            <div className="desk-frame__got-it">{gotItButton}</div>
+            {nudgeToast}
+          </>
+        )}
       </div>
 
       {desktop ? (
@@ -430,28 +472,15 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
             onMode={onRehearse}
             right={<ShortcutsButton keys={SHORTCUTS} open={popover?.name === 'keys'} onToggle={toggleKeys} />}
           />
-          <div className="desk-count">{count}</div>
-          {/* One row, ≤72px: bar position · transport · Got it */}
+          {/* The waveform strip, docked at the bottom of the screen */}
           <footer className="desk-dock">
             <div className="desk-dock__wave" data-coach="strip">
               <GlassButton icon="back" label="Back one beat" size={36} onClick={() => step(-1)} />
               {strip('all')}
               <GlassButton icon="back" flip label="Forward one beat" size={36} onClick={() => step(1)} />
             </div>
-            <div className="desk-dock__transport">
-              <GlassButton icon="restart" label="Restart" size={40} onClick={restart} />
-              <GlassButton icon="prev" label="Previous bar" size={40} onClick={prevBar} />
-              <PlayShutter playing={playing} onClick={togglePlay} />
-              <GlassButton icon="next" label="Next bar" size={40} onClick={nextBar} />
-            </div>
-            <div className="desk-dock__end">
-              <Button className="got-it-pill" data-coach="got-it" onClick={gotIt}>
-                <Icon name="check" size={20} /> Got it
-              </Button>
-            </div>
           </footer>
           {popovers}
-          {nudgeToast}
           {gotItSheet}
           {coaching && <CoachMarks mode="learn" marks={COACH_MARKS} onDone={() => setCoaching(false)} />}
         </>
@@ -470,26 +499,22 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
               {layout === 'portrait' && <span className="learn__top-spacer" aria-hidden />}
             </header>
 
-            {/* Portrait: a row under the header. Landscape: top right,
-                camera-app style. */}
-            <div className="learn__tools">{toolRow}</div>
-
             <div className="learn__middle">{count}</div>
 
             <footer className="learn__bottom">
-              {/* Floats over the bottom of the video to leave it the space. */}
-              <div className="transport">
-                <GlassButton icon="restart" label="Restart" onClick={restart} />
-                <GlassButton icon="back" label="Back one beat" onClick={() => step(-1)} />
-                <PlayShutter playing={playing} onClick={togglePlay} />
-                <GlassButton icon="back" flip label="Forward one beat" onClick={() => step(1)} />
-                {gotItButton()}
+              {/* Floats over the bottom of the video: speed · transport · Got it */}
+              <div className="learn__controls">
+                {speedButton}
+                {transportBar}
+                {gotItButton}
               </div>
               <div ref={stripRef} className="learn__strip" data-coach="strip">
                 {strip('current', layout === 'portrait' ? 64 : 56)}
               </div>
             </footer>
           </div>
+          {/* Tool column on the right edge, centred on the video */}
+          <div className="learn__tools">{toolColumn}</div>
           {popovers}
           {nudgeToast}
           {gotItSheet}
@@ -568,7 +593,7 @@ function SpeedSlider({ speed, onChange }: { speed: number; onChange: (s: number)
 function SpeedPopover({ speed, onChange }: { speed: number; onChange: (s: number) => void }) {
   return (
     <>
-      <div className="popover__head mk-label">
+      <div className="popover__head mk-label-mono">
         <span>Speed</span>
         <span>Same pitch</span>
       </div>
@@ -594,7 +619,7 @@ const SOUND_OPTIONS: { value: Sound; title: string; hint: string; disabled?: boo
 function SoundPopover({ sound, onChange }: { sound: Sound; onChange: (s: Sound) => void }) {
   return (
     <>
-      <div className="popover__head mk-label">
+      <div className="popover__head mk-label-mono">
         <span>Sound</span>
       </div>
       {SOUND_OPTIONS.map((o) => (
