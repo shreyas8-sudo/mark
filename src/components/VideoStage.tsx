@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type Ref } from 'react'
+import { useVideoRef } from '../hooks/useVideoRef'
 import { videoBox, type Crop, type Fit, type Size } from '../lib/crop'
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
 
 export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', onTap, onLoadedMetadata }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
+  const ref = useVideoRef(src, videoRef)
   const [stage, setStage] = useState<Size | null>(null)
   // Keyed by src so a new clip never renders with the old clip's size.
   const [loaded, setLoaded] = useState<{ src: string; size: Size } | null>(null)
@@ -39,7 +41,7 @@ export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', onTap, o
     // The tap is a convenience; Play/Pause stays a visible, labelled button.
     <div ref={stageRef} className="video-stage" data-tappable={onTap ? true : undefined} onClick={onTap}>
       <video
-        ref={videoRef}
+        ref={ref}
         src={src}
         playsInline
         preload="auto"
@@ -63,6 +65,9 @@ export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', onTap, o
           v.webkitPreservesPitch = true // Safari < 17
           setLoaded({ src, size: { w: v.videoWidth, h: v.videoHeight } })
           onLoadedMetadata?.(v)
+          // A paused video that has never seeked shows black on iOS, not its
+          // first frame; seeking forces one to decode.
+          if (v.currentTime === 0) v.currentTime = 0.001
         }}
       />
     </div>

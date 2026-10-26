@@ -3,6 +3,7 @@ import { Button, GlassButton } from '../components/controls'
 import { Icon } from '../components/Icon'
 import { DEMO } from '../data/demo'
 import { useObjectUrl } from '../hooks/useObjectUrl'
+import { useVideoRef } from '../hooks/useVideoRef'
 import { analyze, type Analysis } from '../lib/analyze'
 import { barCount } from '../lib/beat'
 import { FULL_FRAME } from '../lib/crop'
@@ -26,6 +27,7 @@ export function Ready({ file, onCancel, onDone }: Props) {
   const [split, setSplit] = useState(false)
   const [thumb, setThumb] = useState<Blob | null>(null)
   const started = useRef(false)
+  const videoRef = useVideoRef(src)
 
   useEffect(() => {
     if (started.current) return
@@ -96,6 +98,7 @@ export function Ready({ file, onCancel, onDone }: Props) {
 
       <div className="ready__thumb">
         <video
+          ref={videoRef}
           src={src}
           muted
           playsInline

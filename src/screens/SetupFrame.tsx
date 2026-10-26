@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type PointerEvent, type WheelEvent } from 'react'
 import { Button, GlassButton, Segmented, Toggle } from '../components/controls'
 import { Icon } from '../components/Icon'
+import { useVideoRef } from '../hooks/useVideoRef'
 import cornerBl from '../assets/crop/corner-bl.svg'
 import cornerBr from '../assets/crop/corner-br.svg'
 import cornerTl from '../assets/crop/corner-tl.svg'
@@ -40,6 +41,7 @@ export function SetupFrame({ src, initial, onBack, onSave }: Props) {
   const [orientation, setOrientation] = useState<Orientation>(initial.orientation)
   const [framing, setFraming] = useState<Framing | null>(null)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
+  const videoRef = useVideoRef(src)
 
   useLayoutEffect(() => {
     const el = areaRef.current!
@@ -109,6 +111,7 @@ export function SetupFrame({ src, initial, onBack, onSave }: Props) {
         onWheel={onWheel}
       >
         <video
+          ref={videoRef}
           className="setup__video"
           src={src}
           muted
