@@ -19,5 +19,7 @@ export function migrate(m: Saved) {
     speed: rest.speed ?? lastSpeed ?? 0.5,
     sound: SOUNDS[rest.sound ?? ''] ?? 'voice',
     countIn: rest.countIn ?? true,
+    learned: rest.learned ?? [],
+    currentBar: rest.currentBar ?? 1,
   }
 }

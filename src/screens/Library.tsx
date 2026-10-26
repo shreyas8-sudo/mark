@@ -5,7 +5,6 @@ import { Icon } from '../components/Icon'
 import { DEMO } from '../data/demo'
 import { useObjectUrl } from '../hooks/useObjectUrl'
 import { formatTime } from '../lib/format'
-import { formatSpeed } from '../lib/speed'
 import type { Dance } from '../types'
 import './Library.css'
 
@@ -175,9 +174,7 @@ function DanceCard({ dance: d, menuOpen, renaming, onOpen, onMenu, onCloseMenu, 
     objectPosition: `${(d.mirror ? 1 - d.crop.x - d.crop.w / 2 : d.crop.x + d.crop.w / 2) * 100}% ${(d.crop.y + d.crop.h / 2) * 100}%`,
     transform: d.mirror ? 'scaleX(-1)' : undefined,
   }
-  const meta = [formatTime(d.duration), `${d.bars} bars`, d.speed !== 1 && formatSpeed(d.speed)]
-    .filter(Boolean)
-    .join(' · ')
+  const meta = `${formatTime(d.duration)} · ${d.learned.length} of ${d.bars} learned`
 
   return (
     <li ref={cardRef} className="dance-card" data-menu={menuOpen || undefined}>

@@ -22,5 +22,7 @@ export type Dance = {
   speed: number // remembered per dance; new dances start at 0.5
   sound: Sound
   countIn: boolean // Learn: 5-6-7-8 before playing from pause
+  learned: number[] // bars marked "Got it", ascending
+  currentBar: number // where guided Learn resumes (default 1)
   run: { barStart: number; barEnd: number; countIn: boolean; voice?: boolean; loops: Loop[] }
 }

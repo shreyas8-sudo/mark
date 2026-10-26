@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperti
 import { Ambient } from '../components/Ambient'
 import { BarStrip } from '../components/BarStrip'
 import { BigCount } from '../components/BigCount'
-import { DeskTopBar, GlassButton, ModeCarousel, PlayShutter, RailButton, ShortcutsButton } from '../components/controls'
+import { Button, DeskTopBar, GlassButton, ModeCarousel, PlayShutter, RailButton, ShortcutsButton } from '../components/controls'
 import { Icon } from '../components/Icon'
 import { VideoStage } from '../components/VideoStage'
 import { useKeys } from '../hooks/useKeys'
@@ -12,6 +12,7 @@ import { usePlayhead } from '../hooks/usePlayhead'
 import { useVoiceCounts } from '../hooks/useVoiceCounts'
 import { barEnd, barStart, beatLen, loopTarget, position, stepBeat, type Grid } from '../lib/beat'
 import { countIn as playCountIn, unlockAudio } from '../lib/countIn'
+import { followLearned, lastLearned, markLearned, SLOW_SPEED, unmarkLearned } from '../lib/learn'
 import { formatSpeed, SPEED_MAX, SPEED_MIN } from '../lib/speed'
 import type { Dance, Sound } from '../types'
 import './Learn.css'
@@ -26,6 +27,7 @@ const SHORTCUTS: [string, string][] = [
   ['L', 'Loop this bar'],
   ['M', 'Mirror'],
   ['C', 'Count-in on / off'],
+  ['Enter', 'Got it ✓'],
   ['F', 'Edit frame'],
   ['?', 'Show shortcuts'],
 ]
@@ -37,6 +39,7 @@ type Props = {
   src: string
   onBack: () => void
   onEditFrame: () => void
+  /** Switch to Rehearse (optionally after setting its bar range). */
   onRehearse: () => void
   onChange: (patch: Partial<Dance>) => void
   /** Waveform peaks computed for a clip saved before v2, to be stored. */
@@ -50,7 +53,10 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
   const grid: Grid = useMemo(() => ({ bpm: dance.bpm, offset: dance.offset }), [dance.bpm, dance.offset])
   const [duration, setDuration] = useState(dance.duration)
   const [aspect, setAspect] = useState<number | null>(null)
-  const [loopBar, setLoopBar] = useState<number | null>(null)
+  // Guided: open on the bar being learned, looping it.
+  const [loopBar, setLoopBar] = useState<number | null>(() => Math.min(Math.max(1, dance.currentBar), dance.bars))
+  const [runEnd, setRunEnd] = useState<number | null>(null) // "Run 1–N together"
+  const [sheet, setSheet] = useState<{ bar: number; learned: number[] } | null>(null)
   const [popover, setPopover] = useState<Popover>(null)
   const [controlsH, setControlsH] = useState(0)
   const [countingIn, setCountingIn] = useState<number | null>(null) // 5–8 on screen
@@ -58,6 +64,16 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
   const peaks = usePeaks(dance, onPeaks)
 
   const { t, playing } = usePlayhead(videoRef, (video) => {
+    if (runEnd != null) {
+      // Run-through finished: stop and bring the sheet back.
+      if (video.currentTime >= barEnd(runEnd, grid)) {
+        video.pause()
+        video.currentTime = barEnd(runEnd, grid) - 0.02 // rest on bar N, not a frame into N+1
+        setRunEnd(null)
+        setSheet({ bar: runEnd, learned: dance.learned })
+      }
+      return
+    }
     if (loopBar == null) return
     const target = loopTarget(video.currentTime, loopBar, grid)
     if (target != null) video.currentTime = target
@@ -82,8 +98,14 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     enabled: dance.sound !== 'music',
     grid,
     volume: dance.sound === 'voice' ? 1 : 0.7,
-    stopAt: loopBar != null ? barEnd(loopBar, grid) : null,
+    stopAt: runEnd != null ? barEnd(runEnd, grid) : loopBar != null ? barEnd(loopBar, grid) : null,
   })
+
+  // Remember where guided Learn resumes.
+  const { currentBar: savedBar } = dance
+  useEffect(() => {
+    if (loopBar != null && loopBar !== savedBar) onChange({ currentBar: loopBar })
+  }, [loopBar, savedBar, onChange])
 
   useEffect(() => () => cancelCountIn.current?.(), [])
 
@@ -111,23 +133,34 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     cancelCountIn.current = null
     setCountingIn(null)
   }
+  /** Play from `from` (with the 5-6-7-8 if count-in is on). Call from a tap. */
+  const startFrom = (from: number, speed = dance.speed) => {
+    const v = videoRef.current
+    if (!v) return
+    stopCountIn()
+    v.playbackRate = speed
+    if (!dance.countIn) {
+      v.currentTime = from
+      return void v.play().catch(() => {})
+    }
+    // play() + pause() inside the tap lets iOS start it from the timer later.
+    unlockAudio()
+    v.play().catch(() => {})
+    v.pause()
+    v.currentTime = from
+    cancelCountIn.current = playCountIn(beatLen(grid) / speed, setCountingIn, () => {
+      cancelCountIn.current = null
+      setCountingIn(null)
+      void v.play().catch(() => {})
+    })
+  }
   const togglePlay = () => {
     const v = videoRef.current
     if (!v) return
     if (cancelCountIn.current) return stopCountIn() // tap during 5-6-7-8 cancels it
     if (!v.paused) return v.pause()
     if (!dance.countIn) return void v.play().catch(() => {})
-    // Count-in: back to the top of the bar, 5-6-7-8 at the current speed,
-    // then go. play() + pause() inside the tap lets iOS start it later.
-    unlockAudio()
-    v.play().catch(() => {})
-    v.pause()
-    v.currentTime = barStart(loopBar ?? currentBar, grid)
-    cancelCountIn.current = playCountIn(beatLen(grid) / dance.speed, setCountingIn, () => {
-      cancelCountIn.current = null
-      setCountingIn(null)
-      void v.play().catch(() => {})
-    })
+    startFrom(barStart(loopBar ?? currentBar, grid)) // count in from the top of the bar
   }
   const goToBar = (bar: number) => {
     const b = Math.max(1, Math.min(bar, bars))
@@ -152,6 +185,38 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     setLoopBar(bar)
     seek(barStart(bar, grid))
   }
+  // ---- Guided learning ----
+  const gotIt = () => {
+    const bar = loopBar ?? currentBar
+    const learned = markLearned(dance.learned, bar)
+    onChange({ learned, run: followLearned(dance.run, dance.learned, learned) })
+    stopCountIn()
+    videoRef.current?.pause()
+    setSheet({ bar, learned })
+  }
+  const unlearn = (bar: number) => {
+    const learned = unmarkLearned(dance.learned, bar)
+    onChange({ learned, run: followLearned(dance.run, dance.learned, learned) })
+  }
+  const learnNextBar = (bar: number) => {
+    const next = Math.min(bar + 1, bars)
+    setSheet(null)
+    setRunEnd(null)
+    setLoopBar(next)
+    onChange({ speed: SLOW_SPEED, currentBar: next })
+    startFrom(barStart(next, grid), SLOW_SPEED)
+  }
+  const runTogether = (learned: number[]) => {
+    setSheet(null)
+    setLoopBar(null)
+    setRunEnd(lastLearned(learned))
+    startFrom(barStart(1, grid))
+  }
+  const rehearseLearned = (learned: number[]) => {
+    onChange({ run: { ...dance.run, barStart: 1, barEnd: lastLearned(learned) } })
+    onRehearse()
+  }
+
   const toggleMirror = () => onChange({ mirror: !dance.mirror })
   const toggleCountIn = () => onChange({ countIn: !dance.countIn })
   const setSpeed = (speed: number) => onChange({ speed: Math.round(speed * 100) / 100 })
@@ -172,8 +237,12 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     m: toggleMirror,
     c: toggleCountIn,
     f: onEditFrame,
+    Enter: gotIt,
     '?': () => togglePopover('keys'),
-    Escape: () => setPopover(null),
+    Escape: () => {
+      setPopover(null)
+      setSheet(null)
+    },
   })
 
   const strip = (labels: 'current' | 'all', chunkWidth?: number) => (
@@ -185,10 +254,12 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
       current={currentBar}
       t={t}
       looping={loopBar}
+      learned={dance.learned}
       labels={labels}
       chunkWidth={chunkWidth}
       onPick={goToBar}
       onLoop={loopBarAt}
+      onUnlearn={unlearn}
     />
   )
   const speedPill = (
@@ -209,6 +280,28 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
     countingIn != null ? <BigCount count={countingIn} beat={countingIn} countIn />
     : <BigCount count={pos.count} beat={pos.beatIndex} />
   const countInGlyph = '5–8'
+  const thisBarLearned = dance.learned.includes(loopBar ?? currentBar)
+  const gotItButton = (size = 40) => (
+    <GlassButton
+      icon="check"
+      label="Got it"
+      size={size}
+      iconSize={Math.round(size * 0.5)}
+      className={`got-it${thisBarLearned ? ' is-learned' : ''}`}
+      onClick={gotIt}
+    />
+  )
+  const gotItSheet = sheet && (
+    <GotItSheet
+      bar={sheet.bar}
+      learned={sheet.learned}
+      bars={bars}
+      onNext={() => learnNextBar(sheet.bar)}
+      onRunTogether={() => runTogether(sheet.learned)}
+      onRehearse={() => rehearseLearned(sheet.learned)}
+      onClose={() => setSheet(null)}
+    />
+  )
   const popovers = (
     <>
       {(popover === 'speed' || popover === 'sound') && (
@@ -238,6 +331,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
           onTap={togglePlay}
           onLoadedMetadata={(v) => {
             v.playbackRate = dance.speed
+            if (loopBar != null) v.currentTime = barStart(loopBar, grid)
             setDuration(v.duration)
             setAspect((dance.crop.w * v.videoWidth) / (dance.crop.h * v.videoHeight))
           }}
@@ -286,9 +380,15 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
                 onClick={toggleLoop}
               />
             </div>
-            <div className="desk-dock__end">{speedPill}</div>
+            <div className="desk-dock__end">
+              {speedPill}
+              <Button className="got-it-pill" onClick={gotIt}>
+                <Icon name="check" size={18} /> Got it
+              </Button>
+            </div>
           </footer>
           {popovers}
+          {gotItSheet}
         </>
       ) : (
         <>
@@ -326,6 +426,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
                 <PlayShutter playing={playing} onClick={togglePlay} />
                 <GlassButton icon="back" flip label="Forward one beat" iconSize={18} onClick={() => step(1)} />
                 {speedPill}
+                {gotItButton()}
               </div>
               <div ref={stripRef} className="learn__strip">
                 {strip('current', layout === 'portrait' ? 64 : 56)}
@@ -333,8 +434,57 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
             </footer>
           </div>
           {popovers}
+          {gotItSheet}
         </>
       )}
+    </div>
+  )
+}
+
+/** After "Got it": what next? */
+function GotItSheet({
+  bar,
+  learned,
+  bars,
+  onNext,
+  onRunTogether,
+  onRehearse,
+  onClose,
+}: {
+  bar: number
+  learned: number[]
+  bars: number
+  onNext: () => void
+  onRunTogether: () => void
+  onRehearse: () => void
+  onClose: () => void
+}) {
+  const last = lastLearned(learned)
+  const done = learned.length >= bars
+  return (
+    <div className="got-sheet" role="dialog" aria-modal aria-label={`Bar ${bar} learned`}>
+      <button type="button" className="got-sheet__scrim" aria-label="Close" onClick={onClose} />
+      <div className="got-sheet__panel">
+        <span className="got-sheet__handle" />
+        <div className="got-sheet__head">
+          <span className="got-sheet__tick">
+            <Icon name="check" size={20} />
+          </span>
+          <div>
+            <h2 className="mk-heading-m">{done ? 'Whole dance learned' : `Bar ${bar} learned`}</h2>
+            <p className="mk-label-mono">
+              {learned.length} of {bars} learned
+            </p>
+          </div>
+        </div>
+        {bar < bars && <Button onClick={onNext}>Next bar · {bar + 1}</Button>}
+        <Button variant="secondary" onClick={onRunTogether}>
+          {last > 1 ? `Run 1–${last} together` : 'Run bar 1 again'}
+        </Button>
+        <Button variant="secondary" onClick={onRehearse}>
+          Rehearse what I've learned
+        </Button>
+      </div>
     </div>
   )
 }

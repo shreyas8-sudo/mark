@@ -20,9 +20,12 @@ export const DEMO: Dance = {
   speed: 0.5,
   sound: 'voice',
   countIn: true,
+  learned: [],
+  currentBar: 1,
   run: {
     barStart: 1,
-    barEnd: 4,
+    barEnd: 1, // follows the last learned bar
+
     countIn: true,
     loops: [
       { speed: 0.5, plays: 1 },

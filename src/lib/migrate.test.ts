@@ -21,6 +21,6 @@ describe('migrate', () => {
   })
 
   it('defaults to 0.5× with voice counts', () => {
-    expect(migrate({})).toMatchObject({ speed: 0.5, sound: 'voice', countIn: true })
+    expect(migrate({})).toMatchObject({ speed: 0.5, sound: 'voice', countIn: true, learned: [], currentBar: 1 })
   })
 })

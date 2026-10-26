@@ -25,6 +25,8 @@ type PlayProps = Common & {
   looping?: number | null
   onPick: (bar: number) => void
   onLoop?: (bar: number) => void
+  /** Long-press / right-click on a learned bar unticks it (others loop). */
+  onUnlearn?: (bar: number) => void
   range?: undefined
 }
 
@@ -108,16 +110,21 @@ export function BarStrip(props: PlayProps | RangeProps) {
     else props.onRange(start, Math.max(bar, start))
   }
 
-  // ---- Play mode: tap = jump, long-press / right-click = loop ----
+  // ---- Play mode: tap = jump; long-press / right-click = untick a learned
+  // bar, or loop any other ----
   const pressTimer = useRef<number | null>(null)
   const longPressed = useRef(false)
+  const holdAction = (bar: number) => {
+    if (props.range) return
+    if (learned.includes(bar) && props.onUnlearn) props.onUnlearn(bar)
+    else props.onLoop?.(bar)
+  }
   const startPress = (bar: number) => {
     longPressed.current = false
-    if (props.range || !props.onLoop) return
-    const onLoop = props.onLoop
+    if (props.range) return
     pressTimer.current = window.setTimeout(() => {
       longPressed.current = true
-      onLoop(bar)
+      holdAction(bar)
     }, LONG_PRESS_MS)
   }
   const cancelPress = () => {
@@ -183,7 +190,7 @@ export function BarStrip(props: PlayProps | RangeProps) {
             onContextMenu={(e) => {
               e.preventDefault()
               cancelPress()
-              props.onLoop?.(bar)
+              holdAction(bar)
             }}
           >
             {inner}

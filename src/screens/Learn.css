@@ -91,7 +91,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: min(100%, 300px);
+  width: min(100%, 340px);
   margin: 0 auto var(--mk-space-2);
 }
 
@@ -344,4 +344,106 @@
 .learn[data-layout='desktop'] .popover--sound {
   top: 132px;
   right: calc(50% - var(--frame-w) / 2 + 12px);
+}
+
+/* ---- Got it ✓ ---- */
+.got-it.is-learned {
+  background: var(--mk-accent-primary);
+  color: var(--mk-text-inverse);
+}
+
+.got-it-pill {
+  gap: var(--mk-space-2);
+  padding: 10px 18px 10px 14px;
+  border-radius: var(--mk-radius-full);
+}
+
+.got-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.got-sheet__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--mk-overlay-scrim);
+}
+
+.got-sheet__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mk-space-3);
+  width: 100%;
+  max-width: 480px;
+  padding: var(--mk-space-3) 20px max(env(safe-area-inset-bottom), 28px);
+  border-radius: var(--mk-radius-xl) var(--mk-radius-xl) 0 0;
+  background: var(--mk-bg-raised);
+  color: var(--mk-text-primary);
+  animation: got-sheet-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Laptop: a floating card above the dock instead of a bottom sheet */
+.learn[data-layout='desktop'] .got-sheet {
+  justify-content: center;
+}
+
+.learn[data-layout='desktop'] .got-sheet__panel {
+  max-width: 400px;
+  border-radius: var(--mk-radius-xl);
+  padding-bottom: 24px;
+}
+
+@keyframes got-sheet-up {
+  from {
+    transform: translateY(32px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .got-sheet__panel {
+    animation: none;
+  }
+}
+
+.got-sheet__handle {
+  align-self: center;
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--mk-text-tertiary);
+}
+
+.got-sheet__head {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+  margin-bottom: var(--mk-space-2);
+}
+
+.got-sheet__head h2,
+.got-sheet__head p {
+  margin: 0;
+}
+
+.got-sheet__head p {
+  margin-top: 2px;
+  color: var(--mk-text-secondary);
+}
+
+.got-sheet__tick {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--mk-radius-full);
+  background: var(--mk-accent-primary);
+  color: var(--mk-text-inverse);
 }
