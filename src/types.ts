@@ -10,6 +10,7 @@ export type Dance = {
   createdAt: number
   video: Blob | string // Blob for user clips, URL for the bundled demo
   thumb?: Blob | string // poster frame for the library card
+  peaks?: Float32Array // cached waveform (max |sample| per bucket, channel 0)
   duration: number
   bpm: number
   offset: number // time of the first "1"

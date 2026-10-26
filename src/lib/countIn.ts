@@ -3,6 +3,12 @@
 
 let ctx: AudioContext | null = null
 
+/** The app's one AudioContext (clicks and voice counts share its clock). */
+export function audioContext() {
+  ctx ??= new AudioContext()
+  return ctx
+}
+
 /**
  * Call from a tap handler. iOS Safari keeps audio locked until a
  * user-initiated resume plus a played buffer.
@@ -12,7 +18,7 @@ export function unlockAudio() {
   // which would leave the music playing with a silent count-in.
   const nav = navigator as Navigator & { audioSession?: { type: string } }
   if (nav.audioSession) nav.audioSession.type = 'playback'
-  ctx ??= new AudioContext()
+  const ctx = audioContext()
   void ctx.resume()
   const silent = ctx.createBuffer(1, 1, 22050)
   const src = ctx.createBufferSource()
@@ -34,7 +40,7 @@ export function countIn(
   onDone: () => void,
 ) {
   unlockAudio()
-  const audio = ctx!
+  const audio = audioContext()
   const start = audio.currentTime + 0.08
   const nodes: OscillatorNode[] = []
   const timers: number[] = []

@@ -3,17 +3,20 @@
 // the video. Nothing here touches the network.
 import { createStore, del, entries, get, set } from 'idb-keyval'
 import { DEMO } from '../data/demo'
+import { barCount } from './beat'
 import type { Dance } from '../types'
 
 const meta = createStore('mark', 'dances')
 const media = createStore('mark-media', 'media')
 
 const DEMO_HIDDEN = 'flag:demoHidden'
-type Meta = Omit<Dance, 'video' | 'thumb'>
-type Media = { video: Blob; thumb?: Blob }
+// Media is written once (and peaks once more for clips saved before v2);
+// meta is rewritten on every settings change, so it stays small.
+type Meta = Omit<Dance, 'video' | 'thumb' | 'peaks'>
+type Media = { video: Blob; thumb?: Blob; peaks?: Float32Array }
 
 function toMeta(d: Dance): Meta {
-  const { video: _video, thumb: _thumb, ...rest } = d
+  const { video: _video, thumb: _thumb, peaks: _peaks, ...rest } = d
   return rest
 }
 
@@ -32,20 +35,27 @@ export async function loadDances(): Promise<Dance[]> {
     if (files) dances.push({ ...m, ...files }) // a record without its video is unusable
   }
   if (!demoHidden) {
-    // Keep the user's settings for the demo, but always take the clip and
-    // its grid from the build, in case the bundled demo changed.
-    const { video, thumb, duration, bpm, offset, bars } = DEMO
-    dances.push({ ...DEMO, ...demoSaved, video, thumb, duration, bpm, offset, bars })
+    // Keep the user's settings for the demo (including a corrected first
+    // beat), but always take the clip itself from the build.
+    const { video, thumb, duration, bpm } = DEMO
+    const offset = demoSaved?.offset ?? DEMO.offset
+    dances.push({ ...DEMO, ...demoSaved, video, thumb, duration, bpm, offset, bars: barCount(duration, { bpm, offset }) })
   }
   return dances.sort((a, b) => b.createdAt - a.createdAt)
 }
 
 export async function saveDance(d: Dance, withMedia = false) {
   if (withMedia && d.video instanceof Blob) {
-    await set(d.id, { video: d.video, thumb: d.thumb instanceof Blob ? d.thumb : undefined }, media)
+    await set(d.id, { video: d.video, thumb: d.thumb instanceof Blob ? d.thumb : undefined, peaks: d.peaks }, media)
   }
   await set(`dance:${d.id}`, toMeta(d), meta)
   if (d.id === DEMO.id) await del(DEMO_HIDDEN, meta)
+}
+
+/** Add peaks to a clip saved before v2 (computed the first time it's opened). */
+export async function savePeaks(id: string, peaks: Float32Array) {
+  const files = await get<Media>(id, media)
+  if (files) await set(id, { ...files, peaks }, media)
 }
 
 export async function deleteDance(id: string) {

@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { DEMO } from './data/demo'
 import { revokeObjectUrl, useObjectUrl } from './hooks/useObjectUrl'
 import { unlockAudio } from './lib/countIn'
+import { barCount } from './lib/beat'
 import { deleteDance, loadDances, saveDance } from './lib/store'
+import { FirstBeat } from './screens/FirstBeat'
 import { Learn } from './screens/Learn'
 import { Library } from './screens/Library'
 import { Ready } from './screens/Ready'
@@ -11,11 +13,13 @@ import { RehearseSetup } from './screens/RehearseSetup'
 import { SetupFrame } from './screens/SetupFrame'
 import type { Dance } from './types'
 
-// Library → Getting it ready → Setup · Frame → Learn. Setup runs once per
-// dance; after that a dance opens straight into Learn (Frame re-opens setup).
+// Library → Getting it ready → Setup · First beat → Setup · Frame → Learn.
+// Setup runs once per dance; after that a dance opens straight into Learn
+// (Frame and the library's ⋯ menu re-open the setup steps).
 type Screen =
   | { name: 'library' }
   | { name: 'ready'; file: File }
+  | { name: 'firstBeat'; draft: Dance; audio?: AudioBuffer; from: 'ready' | 'library' }
   | { name: 'frame'; draft: Dance; from: 'ready' | 'learn' | 'library' }
   | { name: 'learn'; id: string }
   | { name: 'rehearse'; id: string; running: boolean }
@@ -52,7 +56,7 @@ export default function App() {
   const list = dances ?? []
   const dance =
     screen.name === 'learn' || screen.name === 'rehearse' ? list.find((d) => d.id === screen.id)
-    : screen.name === 'frame' ? screen.draft
+    : screen.name === 'frame' || screen.name === 'firstBeat' ? screen.draft
     : undefined
   const src = useObjectUrl(dance?.video)
 
@@ -85,7 +89,32 @@ export default function App() {
           revokeObjectUrl(screen.file)
           setScreen({ name: 'library' })
         }}
-        onDone={(draft) => setScreen({ name: 'frame', draft, from: 'ready' })}
+        onDone={(draft, audio) => setScreen({ name: 'firstBeat', draft, audio, from: 'ready' })}
+      />
+    )
+  }
+
+  if (screen.name === 'firstBeat' && src) {
+    const { draft, from, audio } = screen
+    return (
+      <FirstBeat
+        key={draft.id}
+        dance={draft}
+        src={src}
+        audio={audio}
+        step={from === 'ready' ? 'Step 1 of 2' : undefined}
+        onBack={() => {
+          if (from === 'ready' && draft.video instanceof Blob) revokeObjectUrl(draft.video)
+          setScreen({ name: 'library' })
+        }}
+        onSave={(offset) => {
+          const grid = { offset, bars: barCount(draft.duration, { bpm: draft.bpm, offset }) }
+          if (from === 'ready') setScreen({ name: 'frame', draft: { ...draft, ...grid }, from: 'ready' })
+          else {
+            update(draft.id, grid)
+            setScreen({ name: 'library' })
+          }
+        }}
       />
     )
   }
@@ -163,6 +192,10 @@ export default function App() {
       onChangeFrame={(id) => {
         const d = list.find((x) => x.id === id)
         if (d) setScreen({ name: 'frame', draft: d, from: 'library' })
+      }}
+      onChangeFirstBeat={(id) => {
+        const d = list.find((x) => x.id === id)
+        if (d) setScreen({ name: 'firstBeat', draft: d, from: 'library' })
       }}
       onDelete={remove}
       onRestoreDemo={() => add({ ...DEMO, createdAt: Date.now() })}

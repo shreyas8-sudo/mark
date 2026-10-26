@@ -15,7 +15,7 @@ type StepState = 'pending' | 'active' | 'done' | 'failed'
 type Props = {
   file: File
   onCancel: () => void
-  onDone: (draft: Dance) => void
+  onDone: (draft: Dance, audio: AudioBuffer) => void
 }
 
 /** 02 Getting it ready: mirror, find the beat, split into bars — all on-device. */
@@ -81,12 +81,13 @@ export function Ready({ file, onCancel, onDone }: Props) {
       duration: analysis.duration,
       bpm: analysis.bpm,
       offset: analysis.offset,
+      peaks: analysis.peaks,
       bars,
       mirror: true,
       crop: FULL_FRAME,
       orientation: size && size.w > size.h ? 'horizontal' : 'vertical',
       lastSpeed: 1,
-    })
+    }, analysis.audio)
   }
 
   return (
@@ -137,7 +138,7 @@ export function Ready({ file, onCancel, onDone }: Props) {
         </Button>
       ) : (
         <Button className="ready__cta" disabled={!ready} onClick={finish}>
-          Check the frame
+          Check the first beat
         </Button>
       )}
     </main>

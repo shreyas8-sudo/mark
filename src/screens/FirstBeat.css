@@ -1,0 +1,172 @@
+.first-beat {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--mk-bg-base);
+  color: var(--mk-text-primary);
+}
+
+.first-beat__video {
+  position: relative;
+  flex: 1;
+  min-height: 160px;
+  overflow: hidden;
+}
+
+.first-beat__top {
+  position: absolute;
+  top: max(env(safe-area-inset-top), var(--mk-space-4));
+  inset-inline: 20px;
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+}
+
+.first-beat__top .mk-body-strong {
+  flex: 1;
+}
+
+.first-beat__step {
+  color: var(--mk-text-secondary);
+}
+
+.first-beat__sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mk-space-4);
+  margin-top: calc(-1 * var(--mk-radius-xl));
+  padding: 22px 20px max(env(safe-area-inset-bottom), 32px);
+  border-radius: var(--mk-radius-xl) var(--mk-radius-xl) 0 0;
+  background: var(--mk-bg-surface);
+}
+
+.first-beat__sheet > * {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+.first-beat__sheet h1,
+.first-beat__sheet p {
+  margin: 0;
+}
+
+.first-beat__sheet p {
+  margin-top: calc(-1 * var(--mk-space-2));
+  color: var(--mk-text-secondary);
+}
+
+/* Waveform with beat ticks and the draggable "1" */
+.beat-wave {
+  position: relative;
+  height: 112px;
+  border-radius: var(--mk-radius-md);
+  background: var(--mk-bg-raised);
+  overflow: hidden;
+  touch-action: none;
+  cursor: ew-resize;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.beat-wave:focus-visible {
+  outline: 2px solid var(--mk-accent-soft);
+  outline-offset: 2px;
+}
+
+.beat-wave__canvas {
+  position: absolute;
+  inset: 22px 0 18px;
+  width: 100%;
+  height: calc(100% - 40px);
+  color: var(--mk-text-tertiary);
+}
+
+.beat-wave__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--mk-text-tertiary);
+}
+
+.beat-wave__tick {
+  position: absolute;
+  top: 22px;
+  bottom: 0;
+  width: 1px;
+  background: var(--mk-glass-fill-strong);
+  pointer-events: none;
+}
+
+.beat-wave__tick .mk-label-mono {
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  color: var(--mk-text-tertiary);
+}
+
+.beat-wave__marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--mk-accent-primary);
+  pointer-events: none;
+}
+
+.beat-wave__flag {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 7px;
+  border-radius: var(--mk-radius-full);
+  background: var(--mk-accent-primary);
+  color: var(--mk-text-inverse);
+}
+
+.beat-wave__playhead {
+  position: absolute;
+  top: 22px;
+  bottom: 0;
+  width: 2px;
+  background: var(--mk-text-primary);
+  pointer-events: none;
+}
+
+.first-beat__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-3);
+}
+
+.first-beat__controls .glass-btn {
+  background: var(--mk-bg-raised);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.first-beat__preview {
+  gap: var(--mk-space-2);
+}
+
+.first-beat__bpm {
+  margin-left: auto;
+  color: var(--mk-text-secondary);
+}
+
+.first-beat__actions {
+  display: grid;
+  grid-template-columns: 145fr 193fr;
+  gap: 10px;
+}
+
+/* The "1" of each later bar */
+.beat-wave__tick[data-one] {
+  background: var(--mk-accent-soft);
+  opacity: 0.6;
+}

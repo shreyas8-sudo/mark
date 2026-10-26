@@ -15,12 +15,13 @@ type Props = {
   onAdd: (file: File) => void
   onRename: (id: string, name: string) => void
   onChangeFrame: (id: string) => void
+  onChangeFirstBeat: (id: string) => void
   onDelete: (id: string) => void
   onRestoreDemo: () => void
 }
 
 /** 01 Library: your dances, saved on this device. */
-export function Library({ dances, onOpen, onAdd, onRename, onChangeFrame, onDelete, onRestoreDemo }: Props) {
+export function Library({ dances, onOpen, onAdd, onRename, onChangeFrame, onChangeFirstBeat, onDelete, onRestoreDemo }: Props) {
   const input = useRef<HTMLInputElement>(null)
   const [menu, setMenu] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -109,6 +110,10 @@ export function Library({ dances, onOpen, onAdd, onRename, onChangeFrame, onDele
                   setMenu(null)
                   onChangeFrame(d.id)
                 }}
+                onChangeFirstBeat={() => {
+                  setMenu(null)
+                  onChangeFirstBeat(d.id)
+                }}
                 onDelete={() => {
                   setMenu(null)
                   onDelete(d.id)
@@ -134,10 +139,11 @@ type CardProps = {
   onStartRename: () => void
   onRename: (name: string) => void
   onChangeFrame: () => void
+  onChangeFirstBeat: () => void
   onDelete: () => void
 }
 
-function DanceCard({ dance: d, menuOpen, renaming, onOpen, onMenu, onCloseMenu, onStartRename, onRename, onChangeFrame, onDelete }: CardProps) {
+function DanceCard({ dance: d, menuOpen, renaming, onOpen, onMenu, onCloseMenu, onStartRename, onRename, onChangeFrame, onChangeFirstBeat, onDelete }: CardProps) {
   const thumb = useObjectUrl(d.thumb)
   const cardRef = useRef<HTMLLIElement>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -205,6 +211,9 @@ function DanceCard({ dance: d, menuOpen, renaming, onOpen, onMenu, onCloseMenu, 
         <div className="card-menu" role="menu" data-side={menuSide}>
           <button type="button" role="menuitem" className="mk-body-strong" onClick={onStartRename}>
             Rename <Icon name="edit" size={20} />
+          </button>
+          <button type="button" role="menuitem" className="mk-body-strong" onClick={onChangeFirstBeat}>
+            Change first beat <Icon name="sound" size={20} />
           </button>
           <button type="button" role="menuitem" className="mk-body-strong" onClick={onChangeFrame}>
             Change frame <Icon name="frame" size={20} />
