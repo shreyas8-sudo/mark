@@ -94,33 +94,8 @@
   margin-top: var(--mk-space-1);
 }
 
-/* Bar range strip */
-.bar-range {
-  display: flex;
-  gap: 3px;
-  touch-action: none;
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.bar-range__cell {
-  flex: 1 1 0;
-  min-width: 0;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border-radius: 6px;
-  background: var(--mk-bg-raised);
-  color: var(--mk-text-tertiary);
-  letter-spacing: 0;
-  overflow: hidden;
-  transition: background 100ms ease;
-}
-
-.bar-range__cell[data-in] {
-  background: var(--mk-accent-primary);
-  color: var(--mk-text-inverse);
+.rehearse-setup__sheet .bar-strip {
+  --strip-h: 40px;
 }
 
 /* Cards and loop rows */

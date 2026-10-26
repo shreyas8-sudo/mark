@@ -1,22 +1,15 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Ambient } from '../components/Ambient'
+import { BarStrip } from '../components/BarStrip'
 import { BigCount } from '../components/BigCount'
 import { DeskTopBar, GlassButton, ModeCarousel, PlayShutter, RailButton, ShortcutsButton } from '../components/controls'
 import { Icon } from '../components/Icon'
 import { VideoStage } from '../components/VideoStage'
 import { useKeys } from '../hooks/useKeys'
 import { useLayout } from '../hooks/useLayout'
+import { usePeaks } from '../hooks/usePeaks'
 import { usePlayhead } from '../hooks/usePlayhead'
-import {
-  barStart,
-  beatTime,
-  COUNTS_PER_BAR,
-  loopTarget,
-  position,
-  stepBeat,
-  type Grid,
-  type Position,
-} from '../lib/beat'
+import { barStart, loopTarget, position, stepBeat, type Grid } from '../lib/beat'
 import { formatSpeed, SPEED_MAX, SPEED_MIN } from '../lib/speed'
 import type { Dance, Sound } from '../types'
 import './Learn.css'
@@ -43,18 +36,21 @@ type Props = {
   onEditFrame: () => void
   onRehearse: () => void
   onChange: (patch: Partial<Dance>) => void
+  /** Waveform peaks computed for a clip saved before v2, to be stored. */
+  onPeaks?: (peaks: Float32Array) => void
 }
 
-export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange }: Props) {
+export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, onPeaks }: Props) {
   const layout = useLayout()
   const videoRef = useRef<HTMLVideoElement>(null)
-  const footerRef = useRef<HTMLElement>(null)
+  const stripRef = useRef<HTMLDivElement>(null)
   const grid: Grid = useMemo(() => ({ bpm: dance.bpm, offset: dance.offset }), [dance.bpm, dance.offset])
   const [duration, setDuration] = useState(dance.duration)
   const [aspect, setAspect] = useState<number | null>(null)
   const [loopBar, setLoopBar] = useState<number | null>(null)
   const [popover, setPopover] = useState<Popover>(null)
   const [controlsH, setControlsH] = useState(0)
+  const peaks = usePeaks(dance, onPeaks)
 
   const { t, playing } = usePlayhead(videoRef, (video) => {
     if (loopBar == null) return
@@ -71,11 +67,12 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange }:
     if (v) v.playbackRate = dance.lastSpeed
   }, [dance.lastSpeed])
 
-  // Phone portrait: the video gets everything above the controls, so the
-  // dancer is never behind them. Measured, since the controls' height varies.
+  // Phone (portrait and landscape): the video gets everything above the bar
+  // strip, so the strip never covers the dancer's feet; the transport floats
+  // over the video. Measured, since the strip's height varies.
   useLayoutEffect(() => {
-    const el = footerRef.current
-    if (!el || layout !== 'portrait') return setControlsH(0)
+    const el = stripRef.current
+    if (!el || layout === 'desktop') return setControlsH(0)
     // From the top of the controls to the bottom of the screen (includes
     // the safe-area padding below them).
     const measure = () => setControlsH(window.innerHeight - el.getBoundingClientRect().top)
@@ -112,9 +109,12 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange }:
     if (loopBar != null) setLoopBar(position(next, grid).bar)
     seek(next)
   }
-  const seekCount = (count: number) => seek(beatTime((currentBar - 1) * COUNTS_PER_BAR + count - 1, grid))
   const restart = () => seek(loopBar != null ? barStart(loopBar, grid) : 0)
   const toggleLoop = () => setLoopBar((b) => (b == null ? currentBar : null))
+  const loopBarAt = (bar: number) => {
+    setLoopBar(bar)
+    seek(barStart(bar, grid))
+  }
   const toggleMirror = () => onChange({ mirror: !dance.mirror })
   const setSpeed = (speed: number) => onChange({ lastSpeed: Math.round(speed * 100) / 100 })
   const setSound = (sound: Sound) => {
@@ -137,8 +137,21 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange }:
     Escape: () => setPopover(null),
   })
 
-  const barProgress = (pos.count - 1 + pos.beatProgress) / COUNTS_PER_BAR
-  const scrubber = <ScrubberTrack pos={pos} progress={barProgress} onCount={seekCount} />
+  const strip = (labels: 'current' | 'all', chunkWidth?: number) => (
+    <BarStrip
+      peaks={peaks}
+      duration={duration}
+      grid={grid}
+      bars={bars}
+      current={currentBar}
+      t={t}
+      looping={loopBar}
+      labels={labels}
+      chunkWidth={chunkWidth}
+      onPick={goToBar}
+      onLoop={loopBarAt}
+    />
+  )
   const speedPill = (
     <button
       type="button"
@@ -212,8 +225,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange }:
           <footer className="desk-dock">
             <div className="desk-dock__wave">
               <GlassButton icon="back" label="Back one beat" size={36} iconSize={16} onClick={() => step(-1)} />
-              <span className="mk-label-mono desk-dock__bar">Bar {currentBar}</span>
-              {scrubber}
+              {strip('all')}
               <GlassButton icon="back" flip label="Forward one beat" size={36} iconSize={16} onClick={() => step(1)} />
             </div>
             <div className="desk-dock__transport">
@@ -238,6 +250,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange }:
       ) : (
         <>
           <div className="learn__scrim learn__scrim--top" />
+          <div className="learn__scrim learn__scrim--bottom" />
           {layout === 'landscape' && <div className="learn__scrim learn__scrim--right" />}
 
           <div className="learn__ui">
@@ -261,92 +274,23 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange }:
               </nav>
             </div>
 
-            <footer ref={footerRef} className="learn__bottom">
-              <div className="bars">
-                <span className="bars__label mk-label-mono mk-over-video">Bars</span>
-                <BarChips bars={bars} current={currentBar} looping={loopBar} onPick={goToBar} />
-              </div>
-
-              <div className="scrubber">
-                <GlassButton icon="back" label="Back one beat" size={34} iconSize={16} onClick={() => step(-1)} />
-                {scrubber}
-                <GlassButton icon="back" flip label="Forward one beat" size={34} iconSize={16} onClick={() => step(1)} />
-              </div>
-
+            <footer className="learn__bottom">
+              {/* Floats over the bottom of the video to leave it the space. */}
               <div className="transport">
                 <GlassButton icon="restart" label="Restart" onClick={restart} />
-                <GlassButton icon="prev" label="Previous bar" onClick={prevBar} />
+                <GlassButton icon="back" label="Back one beat" iconSize={18} onClick={() => step(-1)} />
                 <PlayShutter playing={playing} onClick={togglePlay} />
-                <GlassButton icon="next" label="Next bar" onClick={nextBar} />
+                <GlassButton icon="back" flip label="Forward one beat" iconSize={18} onClick={() => step(1)} />
                 {speedPill}
+              </div>
+              <div ref={stripRef} className="learn__strip">
+                {strip('current', layout === 'portrait' ? 64 : 56)}
               </div>
             </footer>
           </div>
           {popovers}
         </>
       )}
-    </div>
-  )
-}
-
-function ScrubberTrack({ pos, progress, onCount }: { pos: Position; progress: number; onCount: (c: number) => void }) {
-  return (
-    <div className="scrubber__track">
-      <div className="scrubber__counts mk-data-mono">
-        {Array.from({ length: COUNTS_PER_BAR }, (_, i) => i + 1).map((c) => (
-          <button
-            key={c}
-            type="button"
-            className="scrubber__count"
-            data-state={c < pos.count ? 'past' : c === pos.count ? 'now' : 'next'}
-            aria-label={`Count ${c}`}
-            onClick={() => onCount(c)}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
-      <div className="scrubber__bar">
-        <div className="scrubber__fill" style={{ width: `${progress * 100}%` }} />
-      </div>
-    </div>
-  )
-}
-
-function BarChips({
-  bars,
-  current,
-  looping,
-  onPick,
-}: {
-  bars: number
-  current: number
-  looping: number | null
-  onPick: (bar: number) => void
-}) {
-  const rowRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const chip = rowRef.current?.querySelector<HTMLElement>(`[data-bar="${current}"]`)
-    chip?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
-  }, [current])
-
-  return (
-    <div ref={rowRef} className="bars__row">
-      {Array.from({ length: bars }, (_, i) => i + 1).map((b) => (
-        <button
-          key={b}
-          type="button"
-          data-bar={b}
-          className="bar-chip mk-glass mk-data-mono"
-          data-active={b === current || undefined}
-          data-looping={b === looping || undefined}
-          aria-label={`Bar ${b}`}
-          aria-current={b === current}
-          onClick={() => onPick(b)}
-        >
-          {b}
-        </button>
-      ))}
     </div>
   )
 }

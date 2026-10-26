@@ -1,0 +1,102 @@
+.bar-strip {
+  --strip-h: 56px;
+  display: flex;
+  gap: 3px;
+  min-width: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bar-strip[data-scroll] {
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-inline: 50%; /* lets the first and last bars reach the centre */
+  scroll-padding-inline: 50%;
+}
+
+.bar-strip[data-scroll]::-webkit-scrollbar {
+  display: none;
+}
+
+.bar-strip[data-range] {
+  touch-action: none;
+  cursor: pointer;
+}
+
+.bar-strip__chunk {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 0;
+  color: var(--mk-glass-fill-strong);
+  -webkit-touch-callout: none;
+}
+
+.bar-strip[data-scroll] .bar-strip__chunk {
+  flex: none;
+}
+
+.bar-strip__wave {
+  position: relative;
+  display: block;
+  height: var(--strip-h);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.bar-strip__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+}
+
+/* States: not yet · learned · current (glows) · selected (Rehearse range) */
+.bar-strip__chunk[data-state='learned'] {
+  color: color-mix(in srgb, var(--mk-text-primary) 70%, transparent);
+}
+
+.bar-strip__chunk[data-state='current'],
+.bar-strip__chunk[data-state='selected'] {
+  color: var(--mk-accent-primary);
+}
+
+.bar-strip__chunk[data-state='current'] .bar-strip__wave {
+  background: color-mix(in srgb, var(--mk-accent-primary) 14%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--mk-accent-primary) 45%, transparent);
+}
+
+.bar-strip__chunk[data-looping] .bar-strip__wave {
+  outline: 1.5px solid var(--mk-accent-soft);
+  outline-offset: -1.5px;
+}
+
+.bar-strip__playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--mk-text-primary);
+  pointer-events: none;
+}
+
+.bar-strip__label {
+  color: var(--mk-text-tertiary);
+  text-align: center;
+  letter-spacing: 0;
+}
+
+.bar-strip__chunk[data-state='current'] .bar-strip__label,
+.bar-strip__chunk[data-state='selected'] .bar-strip__label {
+  color: var(--mk-accent-soft);
+}
+
+/* Phone: the bar number only under the current chunk. */
+.bar-strip[data-labels='current'] .bar-strip__chunk:not([data-state='current']) .bar-strip__label {
+  visibility: hidden;
+}

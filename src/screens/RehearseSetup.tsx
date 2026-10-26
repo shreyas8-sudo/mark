@@ -1,7 +1,9 @@
-import { useRef, useState, type PointerEvent } from 'react'
+import { useMemo, useState } from 'react'
+import { BarStrip } from '../components/BarStrip'
 import { Button, GlassButton, ModeCarousel, Toggle } from '../components/controls'
 import { Icon } from '../components/Icon'
 import { VideoStage } from '../components/VideoStage'
+import { usePeaks } from '../hooks/usePeaks'
 import { barLen, barStart } from '../lib/beat'
 import { runSeconds } from '../lib/runner'
 import { formatSpeed, SPEED_MAX, SPEED_MIN } from '../lib/speed'
@@ -22,6 +24,8 @@ type Props = {
 /** 07 Rehearse · Setup: bar range, count-in, loops. */
 export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }: Props) {
   const { run } = dance
+  const peaks = usePeaks(dance)
+  const grid = useMemo(() => ({ bpm: dance.bpm, offset: dance.offset }), [dance.bpm, dance.offset])
   const [sheet, setSheet] = useState<{ index: number | null } | null>(null) // null index = add
   const range = `Bars ${run.barStart} → ${run.barEnd}`
   const secs = runSeconds(run, run.barEnd - run.barStart + 1, barLen(dance))
@@ -62,11 +66,14 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
             <span>Bars</span>
             <span className="rehearse-setup__hint">Drag the ends</span>
           </div>
-          <BarRange
+          <BarStrip
+            peaks={peaks}
+            duration={dance.duration}
+            grid={grid}
             bars={dance.bars}
-            start={run.barStart}
-            end={run.barEnd}
-            onChange={(barStart, barEnd) => onChange({ ...run, barStart, barEnd })}
+            labels="all"
+            range={{ start: run.barStart, end: run.barEnd }}
+            onRange={(barStart, barEnd) => onChange({ ...run, barStart, barEnd })}
           />
         </div>
 
@@ -133,64 +140,6 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
 }
 
 const formatDuration = (s: number) => (s < 60 ? `~${Math.max(5, Math.round(s / 5) * 5)} sec` : `~${Math.round(s / 60)} min`)
-
-/** Strip of bars; drag either end of the selected range (or tap to move the nearer end). */
-function BarRange({
-  bars,
-  start,
-  end,
-  onChange,
-}: {
-  bars: number
-  start: number
-  end: number
-  onChange: (start: number, end: number) => void
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const dragging = useRef<'start' | 'end' | null>(null)
-
-  const barAt = (x: number) => {
-    const r = ref.current!.getBoundingClientRect()
-    return Math.min(bars, Math.max(1, Math.floor(((x - r.left) / r.width) * bars) + 1))
-  }
-  const moveTo = (bar: number) => {
-    if (dragging.current === 'start') onChange(Math.min(bar, end), end)
-    else onChange(start, Math.max(bar, start))
-  }
-
-  const onPointerDown = (e: PointerEvent) => {
-    e.currentTarget.setPointerCapture(e.pointerId)
-    const bar = barAt(e.clientX)
-    dragging.current =
-      bar <= start ? 'start' : bar >= end ? 'end' : bar - start < end - bar ? 'start' : 'end'
-    moveTo(bar)
-  }
-  const onPointerMove = (e: PointerEvent) => {
-    if (dragging.current) moveTo(barAt(e.clientX))
-  }
-  const onPointerUp = () => {
-    dragging.current = null
-  }
-
-  return (
-    <div
-      ref={ref}
-      className="bar-range"
-      role="group"
-      aria-label={`Bars ${start} to ${end}`}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-    >
-      {Array.from({ length: bars }, (_, i) => i + 1).map((b) => (
-        <span key={b} className="bar-range__cell mk-label-mono" data-in={(b >= start && b <= end) || undefined}>
-          {b}
-        </span>
-      ))}
-    </div>
-  )
-}
 
 const SPEED_CHIPS = [0.5, 0.75, 1, 1.25]
 

@@ -21,8 +21,8 @@
 }
 
 .learn__scrim--bottom {
-  bottom: 0;
-  height: 280px;
+  bottom: var(--controls-h, 0px);
+  height: 160px;
   background: linear-gradient(to top, var(--mk-overlay-scrim-strong), transparent);
 }
 
@@ -31,7 +31,7 @@
   inset: 0;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  /* minmax(0) so a long bar-chip row scrolls instead of widening the page */
+  /* minmax(0) so the long bar strip scrolls instead of widening the page */
   grid-template-columns: minmax(0, 1fr);
   padding:
     max(env(safe-area-inset-top), var(--mk-space-4))
@@ -42,7 +42,7 @@
 }
 
 .learn__ui button,
-.learn__ui .bars__row {
+.learn__ui .bar-strip {
   pointer-events: auto;
 }
 
@@ -53,19 +53,18 @@
   justify-content: space-between;
 }
 
-/* ---- Middle: big count above the rail, both on the right ---- */
+/* ---- Middle: big count on the left, tool rail on the right ---- */
 .learn__middle {
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--mk-space-4);
+  justify-content: space-between;
+  align-items: flex-start;
   padding-top: var(--mk-space-3);
   min-height: 0;
 }
 
 .learn__middle .big-count {
-  margin-right: 2px;
+  justify-items: start;
 }
 
 .learn__rail {
@@ -73,7 +72,8 @@
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  margin-right: -2px;
+  align-self: center;
+  margin: 0 -2px 0 auto;
 }
 
 /* ---- Bottom ---- */
@@ -86,105 +86,13 @@
   margin-inline: auto;
 }
 
-.bars {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.bars__label {
-  flex: none;
-  color: var(--mk-text-primary);
-}
-
-.bars__row {
-  min-width: 0;
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding: 2px;
-  scroll-padding-inline: var(--mk-space-4);
-  mask-image: linear-gradient(to right, transparent, black 12px, black calc(100% - 12px), transparent);
-}
-
-.bars__row::-webkit-scrollbar {
-  display: none;
-}
-
-.bar-chip {
-  flex: none;
-  min-width: 34px;
-  padding: var(--mk-space-2) var(--mk-space-3);
-  border-radius: var(--mk-radius-sm);
-  color: var(--mk-text-primary);
-}
-
-.bar-chip[data-active] {
-  background: var(--mk-control-solid);
-  color: var(--mk-text-inverse);
-}
-
-.bar-chip[data-looping] {
-  box-shadow: inset 0 0 0 2px var(--mk-accent-primary);
-}
-
-/* ---- Beat scrubber ---- */
-.scrubber {
-  display: flex;
-  align-items: center;
-  gap: var(--mk-space-3);
-  height: 36px;
-}
-
-.scrubber__track {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.scrubber__counts {
-  display: flex;
-  justify-content: space-between;
-}
-
-.scrubber__count {
-  min-width: 14px;
-  color: var(--mk-text-secondary);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-}
-
-.scrubber__count[data-state='past'] {
-  color: var(--mk-text-primary);
-}
-
-.scrubber__count[data-state='now'] {
-  color: var(--mk-accent-soft);
-}
-
-.scrubber__bar {
-  height: 4px;
-  border-radius: var(--mk-radius-full);
-  background: var(--mk-glass-fill-strong);
-  overflow: hidden;
-}
-
-.scrubber__fill {
-  height: 100%;
-  border-radius: 2px;
-  background: var(--mk-accent-primary);
-}
-
 /* ---- Transport ---- */
 .transport {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: min(100%, 281px);
-  margin: var(--mk-space-1) auto 0;
+  width: min(100%, 300px);
+  margin: 0 auto var(--mk-space-2);
 }
 
 .speed-pill {
@@ -312,19 +220,26 @@
   inset: 0;
 }
 
-/* Portrait: the video takes everything above the controls (measured into
-   --controls-h), shown whole, so the controls never cover the dancer. */
-.learn[data-layout='portrait'] .learn__stage {
+/* Phone: the video takes everything above the bar strip (measured into
+   --controls-h), shown whole; only the floating transport sits over it. */
+.learn[data-layout='portrait'] .learn__stage,
+.learn[data-layout='landscape'] .learn__stage {
   bottom: var(--controls-h, 0px);
 }
 
-.learn[data-layout='portrait'] .learn__bottom {
-  padding-top: var(--mk-space-3);
+.learn__strip {
+  margin-inline: calc(-1 * max(env(safe-area-inset-left), 20px));
+  pointer-events: auto;
+}
+
+/* Laptop dock and landscape share the strip at a shorter height. */
+.learn[data-layout='landscape'] .bar-strip {
+  --strip-h: 44px;
 }
 
 /* ---------- 09 Learn · Landscape (phone on its side) ----------
    Camera-app layout: tools row top right, shutter column on the right
-   edge, bars + beat scrubber bottom left. Same elements as portrait,
+   edge, bar strip bottom left. Same elements as portrait,
    re-placed on a grid. */
 .learn__scrim--right {
   inset: 0 0 0 auto;
@@ -339,7 +254,7 @@
 
 .learn[data-layout='landscape'] .learn__ui {
   grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-rows: auto 1fr auto;
   column-gap: var(--mk-space-6);
   row-gap: var(--mk-space-3);
   padding:
@@ -383,16 +298,10 @@
   height: 34px;
 }
 
-.learn[data-layout='landscape'] .bars {
+.learn[data-layout='landscape'] .learn__strip {
   grid-area: 3 / 1;
-  padding-left: 32px;
-  max-width: 620px;
-}
-
-.learn[data-layout='landscape'] .scrubber {
-  grid-area: 4 / 1;
-  padding-left: 32px;
-  max-width: 620px;
+  margin: 0;
+  max-width: 640px;
 }
 
 .learn[data-layout='landscape'] .transport {
@@ -423,10 +332,6 @@
 /* ---------- 11 Learn · Laptop (v2: no side panels) ---------- */
 .learn[data-layout='desktop'] {
   user-select: auto;
-}
-
-.learn[data-layout='desktop'] .scrubber__count {
-  text-shadow: none;
 }
 
 .learn[data-layout='desktop'] .popover--speed {

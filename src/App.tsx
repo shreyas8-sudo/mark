@@ -3,7 +3,7 @@ import { DEMO } from './data/demo'
 import { revokeObjectUrl, useObjectUrl } from './hooks/useObjectUrl'
 import { unlockAudio } from './lib/countIn'
 import { barCount } from './lib/beat'
-import { deleteDance, loadDances, saveDance } from './lib/store'
+import { deleteDance, loadDances, saveDance, savePeaks } from './lib/store'
 import { FirstBeat } from './screens/FirstBeat'
 import { Learn } from './screens/Learn'
 import { Library } from './screens/Library'
@@ -152,6 +152,10 @@ export default function App() {
         onEditFrame={() => setScreen({ name: 'frame', draft: dance, from: 'learn' })}
         onRehearse={() => setScreen({ name: 'rehearse', id: dance.id, running: false })}
         onChange={(patch) => update(dance.id, patch)}
+        onPeaks={(peaks) => {
+          update(dance.id, { peaks })
+          void savePeaks(dance.id, peaks)
+        }}
       />
     )
   }

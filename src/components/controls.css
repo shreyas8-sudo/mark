@@ -406,14 +406,9 @@ button:focus-visible {
   min-width: 0;
 }
 
-.desk-dock__wave > :nth-child(3) {
+.desk-dock__wave .bar-strip {
+  --strip-h: 34px;
   flex: 1;
-  min-width: 0;
-}
-
-.desk-dock__bar {
-  color: var(--mk-accent-soft);
-  white-space: nowrap;
 }
 
 .desk-dock__transport {

@@ -5,11 +5,15 @@ type Props = {
   peaks: Float32Array
   /** Colour for each column, given its 0–1 position across the canvas. */
   colorAt?: (x: number) => string
+  /** Redraw trigger when the CSS colour changes (e.g. a chunk's state). */
+  tone?: string
+  /** Normalise against this instead of the slice's own max. */
+  max?: number
   className?: string
 }
 
 /** Mirrored bar waveform on a canvas, crisp at any devicePixelRatio. */
-export function Waveform({ peaks, colorAt, className }: Props) {
+export function Waveform({ peaks, colorAt, tone, max: maxProp, className }: Props) {
   const ref = useRef<HTMLCanvasElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
 
@@ -37,7 +41,7 @@ export function Waveform({ peaks, colorAt, className }: Props) {
     const bar = 2
     const gap = 1
     const columns = Math.floor(size.w / (bar + gap))
-    const max = peakMax(peaks)
+    const max = maxProp ?? peakMax(peaks)
     const mid = size.h / 2
     for (let c = 0; c < columns; c++) {
       const from = Math.floor((c / columns) * peaks.length)
@@ -48,7 +52,7 @@ export function Waveform({ peaks, colorAt, className }: Props) {
       ctx.fillStyle = colorAt ? colorAt((c + 0.5) / columns) : fallback
       ctx.fillRect(c * (bar + gap), mid - h / 2, bar, h)
     }
-  }, [peaks, size, colorAt])
+  }, [peaks, size, colorAt, tone, maxProp])
 
   return <canvas ref={ref} className={className} aria-hidden />
 }
