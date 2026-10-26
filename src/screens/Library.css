@@ -125,7 +125,7 @@
 
 .dance-card__meta {
   color: var(--mk-text-secondary);
-  text-transform: uppercase;
+  font-size: 12px; /* "0:55 · 0 of 10 learned" fits a phone-width card */
 }
 
 .dance-card__rename {

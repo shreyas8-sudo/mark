@@ -24,7 +24,7 @@ type Props = {
 const UNSET = { bpm: 120, offset: 0 }
 
 /**
- * 02 Getting it ready: mirror, find the beat, split into bars — all
+ * 02 Reading the beat: mirror, find the beat, split into bars — all
  * on-device. A clip is never turned away: with no beat found (or no audio
  * at all), the dancer sets the counts by hand next.
  */
@@ -71,11 +71,11 @@ export function Ready({ file, onCancel, onDone }: Props) {
     { state: mirrored ? 'done' : 'active', label: 'Mirrored' },
     {
       state: noBeat ? 'manual' : found ? 'done' : 'active',
-      label: noBeat ? 'Couldn’t find the beat' : found ? `Found the beat · ${Math.round(found.bpm)} BPM` : 'Finding the beat',
+      label: noBeat ? 'Couldn’t hear a beat' : found ? `Got the beat · ${Math.round(found.bpm)} BPM` : 'Finding the beat',
     },
     {
       state: split ? 'done' : found ? 'active' : 'pending',
-      label: split ? `Split into ${bars} bars` : noBeat ? 'Bars follow from your counts' : 'Splitting into bars',
+      label: split ? `${bars} bars` : noBeat ? 'Bars follow from your counts' : 'Counting it out',
     },
   ]
 
@@ -104,7 +104,7 @@ export function Ready({ file, onCancel, onDone }: Props) {
 
   return (
     <main className="ready" data-mode="learn">
-      <GlassButton icon="close" label="Cancel" iconSize={20} onClick={onCancel} />
+      <GlassButton icon="close" label="Cancel" solid onClick={onCancel} />
 
       <div className="ready__thumb">
         <video
@@ -127,24 +127,24 @@ export function Ready({ file, onCancel, onDone }: Props) {
       </div>
 
       <section className="ready__body">
-        <h1 className="mk-heading-l">Getting it ready</h1>
+        <h1 className="mk-heading-l">Reading the beat…</h1>
         <ul className="ready__steps">
           {steps.map((s) => (
             <li key={s.label} className="ready__step mk-body" data-state={s.state}>
               <span className="ready__mark">
-                {s.state === 'done' && <Icon name="check" size={16} />}
+                {s.state === 'done' && <Icon name="check" size={20} />}
               </span>
               {s.label}
             </li>
           ))}
         </ul>
         <p className="ready__note mk-body-small">
-          {noBeat ? 'Couldn’t find the beat. Set your counts: mark count 1 and count 8, and Mark does the rest.' : 'Everything stays on your device.'}
+          {noBeat ? 'Couldn’t hear a clear beat. Mark your 1 and your 8, and we’ll count the rest.' : 'It all stays on your device.'}
         </p>
       </section>
 
       <Button className="ready__cta" disabled={!ready} onClick={finish}>
-        {noBeat ? 'Set your counts' : 'Check the first beat'}
+        {noBeat ? 'Mark your counts' : 'Check the 1'}
       </Button>
     </main>
   )

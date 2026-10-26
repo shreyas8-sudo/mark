@@ -138,6 +138,8 @@
 
 .popover__value {
   color: var(--mk-accent-soft);
+  font-family: var(--mk-font-mono); /* a speed: numbers are Geist Mono */
+  letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
 }
 

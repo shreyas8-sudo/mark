@@ -1,11 +1,6 @@
 .mk-icon {
-  display: inline-block;
+  display: block;
   flex: none;
-  background-color: currentColor;
-  mask-size: 100% 100%;
-  -webkit-mask-size: 100% 100%;
-  mask-repeat: no-repeat;
-  -webkit-mask-repeat: no-repeat;
 }
 
 button {
@@ -33,6 +28,10 @@ button:focus-visible {
   border-radius: var(--mk-radius-full);
   color: var(--mk-text-primary);
   transition: transform 120ms ease;
+}
+
+.glass-btn--solid {
+  background: var(--mk-bg-raised);
 }
 
 .glass-btn:active {
@@ -75,9 +74,7 @@ button:focus-visible {
   border-radius: var(--mk-radius-full);
   border: 1px solid transparent;
   color: var(--mk-text-primary);
-  font: 500 13px/1.2 var(--mk-font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 600 13px/1.2 var(--mk-font-sans);
 }
 
 .mode-carousel__option[aria-selected='true'] {
@@ -276,6 +273,7 @@ button:focus-visible {
   gap: var(--mk-space-2);
   padding: 10px 18px 10px 12px;
   border-radius: var(--mk-radius-full);
+  background: var(--mk-bg-raised);
   color: var(--mk-text-primary);
 }
 
@@ -430,6 +428,7 @@ button:focus-visible {
   width: 40px;
   height: 40px;
   border-radius: var(--mk-radius-full);
+  background: var(--mk-bg-raised);
   color: var(--mk-text-primary);
 }
 
@@ -444,10 +443,8 @@ button:focus-visible {
   width: max-content;
   padding: var(--mk-space-4) 18px;
   border-radius: 20px;
-  background: var(--mk-overlay-scrim-strong);
-  -webkit-backdrop-filter: blur(var(--mk-glass-blur)) saturate(160%);
-  backdrop-filter: blur(var(--mk-glass-blur)) saturate(160%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: var(--mk-bg-raised);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 .shortcuts__pop p {

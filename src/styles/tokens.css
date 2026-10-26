@@ -80,10 +80,13 @@
 .mk-body          { font: 400 15px/1.45 var(--mk-font-sans); }
 .mk-body-strong   { font: 600 15px/1.45 var(--mk-font-sans); }
 .mk-body-small    { font: 400 13px/1.4 var(--mk-font-sans); }
+.mk-label         { font: 600 12px/1.3 var(--mk-font-sans); }
+/* Geist Mono is only for numbers: counts, BPM, speed, timestamps. */
 .mk-data-mono     { font: 500 14px/1.3 var(--mk-font-mono); font-variant-numeric: tabular-nums; }
-.mk-label-mono    { font: 500 11px/1.2 var(--mk-font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.mk-label-mono    { font: 500 11px/1.2 var(--mk-font-mono); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
 
-/* ---- Glass surface ---- */
+/* ---- Glass surface: only over video. Panels and sheets on a solid
+   background use --mk-bg-raised instead. ---- */
 .mk-glass {
   background: var(--mk-glass-tint);
   -webkit-backdrop-filter: blur(var(--mk-glass-blur)) saturate(160%);

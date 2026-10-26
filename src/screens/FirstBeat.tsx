@@ -20,7 +20,7 @@ const BUCKETS = 800
 type Props = {
   dance: Dance
   src: string
-  audio?: AudioBuffer // already decoded when coming from Getting it ready
+  audio?: AudioBuffer // already decoded when coming from Reading the beat
   step?: string
   onBack: () => void
   onSave: (offset: number) => void
@@ -182,15 +182,15 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave, onFi
           }}
         />
         <header className="first-beat__top">
-          <GlassButton icon="back" label="Back" iconSize={20} onClick={onBack} />
+          <GlassButton icon="back" label="Back" onClick={onBack} />
           <span className="mk-body-strong mk-over-video">Set up</span>
-          {step && <span className="first-beat__step mk-label-mono mk-over-video">{step}</span>}
+          {step && <span className="first-beat__step mk-label mk-over-video">{step}</span>}
         </header>
       </div>
 
       <section className="first-beat__sheet">
-        <h1 className="mk-heading-m">Is this where your first count starts?</h1>
-        <p className="mk-body-small">Drag the 1 onto the first strong beat, then preview it with the counts.</p>
+        <h1 className="mk-heading-m">Is this your 1?</h1>
+        <p className="mk-body-small">Drag the 1 onto the first strong beat, then play it back.</p>
 
         <div
           ref={areaRef}
@@ -211,7 +211,7 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave, onFi
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
         >
-          {peaks ? <Waveform peaks={peaks} className="beat-wave__canvas" /> : <span className="beat-wave__loading mk-label-mono">Reading the audio…</span>}
+          {peaks ? <Waveform peaks={peaks} className="beat-wave__canvas" /> : <span className="beat-wave__loading mk-label">Listening…</span>}
           {ticks.map((tk) => (
             <span key={tk.time.toFixed(4)} className="beat-wave__tick" data-one={tk.count === 1 || undefined} style={{ left: `${x(tk.time)}%` }}>
               {tk.count != null && tk.count !== 1 && <span className="mk-label-mono">{tk.count}</span>}
@@ -224,12 +224,12 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave, onFi
         </div>
 
         <div className="first-beat__controls">
-          <GlassButton icon="back" label="Move the 1 back one beat" size={44} iconSize={18} onClick={() => moveTo(offset - beat)} />
+          <GlassButton icon="back" label="Move the 1 back one beat" size={44} onClick={() => moveTo(offset - beat)} />
           <Button variant="secondary" className="first-beat__preview" onClick={preview}>
-            <Icon name={previewing ? 'pause' : 'play'} size={18} />
-            {previewing ? 'Stop' : 'Preview'}
+            <Icon name={previewing ? 'pause' : 'play'} size={20} />
+            {previewing ? 'Stop' : 'Play it'}
           </Button>
-          <GlassButton icon="back" flip label="Move the 1 forward one beat" size={44} iconSize={18} onClick={() => moveTo(offset + beat)} />
+          <GlassButton icon="back" flip label="Move the 1 forward one beat" size={44} onClick={() => moveTo(offset + beat)} />
           <span className="first-beat__bpm mk-label-mono">{Math.round(dance.bpm)} BPM</span>
         </div>
 
@@ -237,7 +237,7 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave, onFi
           <Button variant="secondary" disabled={offset === dance.offset} onClick={() => moveTo(dance.offset)}>
             Reset
           </Button>
-          <Button onClick={() => onSave(Math.round(offset * 1000) / 1000)}>Sounds right</Button>
+          <Button onClick={() => onSave(Math.round(offset * 1000) / 1000)}>That’s the 1</Button>
         </div>
         <button
           type="button"
@@ -247,7 +247,7 @@ export function FirstBeat({ dance, src, audio: given, step, onBack, onSave, onFi
             onFixCounts(audio ?? undefined)
           }}
         >
-          Counts wrong? Set them yourself
+          Off? Count it yourself
         </button>
       </section>
     </main>

@@ -36,6 +36,12 @@ export async function loadDances(): Promise<Dance[]> {
     const files = await get<Media>(m.id, media)
     if (files) dances.push({ ...m, ...files }) // a record without its video is unusable
   }
+  // Saved against an earlier demo clip: its counts, frame, learned bars and
+  // run don't fit this one, so keep only the playback preferences.
+  if (demoSaved && demoSaved.duration !== DEMO.duration) {
+    const { name, createdAt, speed, sound, mirror, countIn } = demoSaved
+    demoSaved = { ...DEMO, name, createdAt, speed, sound, mirror, countIn }
+  }
   if (!demoHidden) {
     // Keep the user's settings for the demo (including corrected counts),
     // but always take the clip itself from the build.

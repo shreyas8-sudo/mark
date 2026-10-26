@@ -7,7 +7,6 @@ import { Button, DeskTopBar, GlassButton, ModeCarousel, PlayShutter, ShortcutsBu
 import { Icon } from '../components/Icon'
 import { AnchoredPopover, ToolRow, type Tool } from '../components/Tools'
 import { VideoStage } from '../components/VideoStage'
-import { DEMO } from '../data/demo'
 import { useKeys } from '../hooks/useKeys'
 import { useLayout } from '../hooks/useLayout'
 import { usePeaks } from '../hooks/usePeaks'
@@ -38,11 +37,18 @@ const SHORTCUTS: [string, string][] = [
 
 type Popover = { name: 'speed' | 'sound'; anchor: HTMLElement } | { name: 'keys' } | null
 
-// First visit only, over the demo.
+// First visit to Learn only.
 const COACH_MARKS: CoachMark[] = [
-  { target: 'strip', text: 'Tap a chunk to jump to a bar' },
-  { target: 'speed', text: 'Start slow. Speed up when it clicks' },
-  { target: 'got-it', text: "Got it? Tap the tick, then rehearse what you've learned" },
+  { target: 'strip', text: 'Tap a bar to jump to it' },
+  { target: 'speed', text: 'Start slow and bump the speed when it clicks' },
+  {
+    target: 'got-it',
+    text: (
+      <>
+        Tap <Icon name="check" size={20} /> when you’ve got a bar
+      </>
+    ),
+  },
 ]
 
 type Props = {
@@ -69,7 +75,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
   const [loopBar, setLoopBar] = useState<number | null>(() => Math.min(Math.max(1, dance.currentBar), dance.bars))
   const [runEnd, setRunEnd] = useState<number | null>(null) // "Run 1–N together"
   const [sheet, setSheet] = useState<{ bar: number; learned: number[] } | null>(null)
-  const [coaching, setCoaching] = useState(() => dance.id === DEMO.id && !coachMarksDone())
+  const [coaching, setCoaching] = useState(() => !coachMarksDone('learn'))
   // Speed-up nudge after a few laps of the same bar at the same speed.
   const laps = useRef({ key: '', count: 0 })
   const nudged = useRef(new Set<string>())
@@ -318,7 +324,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
   )
   const nudgeToast = nudge != null && (
     <div className="nudge mk-glass" role="status">
-      <span className="mk-body-strong">Feeling it? Try {formatSpeed(nudge)}</span>
+      <span className="mk-body-strong">Got the feel? Bump it up</span>
       <button
         type="button"
         className="nudge__try mk-body-strong"
@@ -327,10 +333,10 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
           setNudge(null)
         }}
       >
-        Try it
+        {formatSpeed(nudge)}
       </button>
       <button type="button" className="nudge__close" aria-label="Dismiss" onClick={() => setNudge(null)}>
-        <Icon name="close" size={16} />
+        <Icon name="close" size={20} />
       </button>
     </div>
   )
@@ -357,7 +363,6 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
       icon="check"
       label="Got it"
       size={size}
-      iconSize={Math.round(size * 0.5)}
       className={`got-it${thisBarLearned ? ' is-learned' : ''}`}
       data-coach="got-it"
       onClick={gotIt}
@@ -429,26 +434,26 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
           {/* One row, ≤72px: bar position · transport · Got it */}
           <footer className="desk-dock">
             <div className="desk-dock__wave" data-coach="strip">
-              <GlassButton icon="back" label="Back one beat" size={36} iconSize={16} onClick={() => step(-1)} />
+              <GlassButton icon="back" label="Back one beat" size={36} onClick={() => step(-1)} />
               {strip('all')}
-              <GlassButton icon="back" flip label="Forward one beat" size={36} iconSize={16} onClick={() => step(1)} />
+              <GlassButton icon="back" flip label="Forward one beat" size={36} onClick={() => step(1)} />
             </div>
             <div className="desk-dock__transport">
-              <GlassButton icon="restart" label="Restart" size={40} iconSize={18} onClick={restart} />
-              <GlassButton icon="prev" label="Previous bar" size={40} iconSize={16} onClick={prevBar} />
+              <GlassButton icon="restart" label="Restart" size={40} onClick={restart} />
+              <GlassButton icon="prev" label="Previous bar" size={40} onClick={prevBar} />
               <PlayShutter playing={playing} onClick={togglePlay} />
-              <GlassButton icon="next" label="Next bar" size={40} iconSize={16} onClick={nextBar} />
+              <GlassButton icon="next" label="Next bar" size={40} onClick={nextBar} />
             </div>
             <div className="desk-dock__end">
               <Button className="got-it-pill" data-coach="got-it" onClick={gotIt}>
-                <Icon name="check" size={18} /> Got it
+                <Icon name="check" size={20} /> Got it
               </Button>
             </div>
           </footer>
           {popovers}
           {nudgeToast}
           {gotItSheet}
-          {coaching && <CoachMarks marks={COACH_MARKS} onDone={() => setCoaching(false)} />}
+          {coaching && <CoachMarks mode="learn" marks={COACH_MARKS} onDone={() => setCoaching(false)} />}
         </>
       ) : (
         <>
@@ -475,9 +480,9 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
               {/* Floats over the bottom of the video to leave it the space. */}
               <div className="transport">
                 <GlassButton icon="restart" label="Restart" onClick={restart} />
-                <GlassButton icon="back" label="Back one beat" iconSize={18} onClick={() => step(-1)} />
+                <GlassButton icon="back" label="Back one beat" onClick={() => step(-1)} />
                 <PlayShutter playing={playing} onClick={togglePlay} />
-                <GlassButton icon="back" flip label="Forward one beat" iconSize={18} onClick={() => step(1)} />
+                <GlassButton icon="back" flip label="Forward one beat" onClick={() => step(1)} />
                 {gotItButton()}
               </div>
               <div ref={stripRef} className="learn__strip" data-coach="strip">
@@ -488,7 +493,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
           {popovers}
           {nudgeToast}
           {gotItSheet}
-          {coaching && <CoachMarks marks={COACH_MARKS} onDone={() => setCoaching(false)} />}
+          {coaching && <CoachMarks mode="learn" marks={COACH_MARKS} onDone={() => setCoaching(false)} />}
         </>
       )}
     </div>
@@ -525,18 +530,18 @@ function GotItSheet({
             <Icon name="check" size={20} />
           </span>
           <div>
-            <h2 className="mk-heading-m">{done ? 'Whole dance learned' : `Bar ${bar} learned`}</h2>
+            <h2 className="mk-heading-m">{done ? 'You’ve got the whole dance' : `Bar ${bar}, got it`}</h2>
             <p className="mk-label-mono">
               {learned.length} of {bars} learned
             </p>
           </div>
         </div>
-        {bar < bars && <Button onClick={onNext}>Next bar · {bar + 1}</Button>}
+        {bar < bars && <Button onClick={onNext}>Next up: bar {bar + 1}</Button>}
         <Button variant="secondary" onClick={onRunTogether}>
-          {last > 1 ? `Run 1–${last} together` : 'Run bar 1 again'}
+          {last > 1 ? `Run 1–${last}` : 'Run bar 1 again'}
         </Button>
         <Button variant="secondary" onClick={onRehearse}>
-          Rehearse what I've learned
+          Rehearse it
         </Button>
       </div>
     </div>
@@ -563,9 +568,9 @@ function SpeedSlider({ speed, onChange }: { speed: number; onChange: (s: number)
 function SpeedPopover({ speed, onChange }: { speed: number; onChange: (s: number) => void }) {
   return (
     <>
-      <div className="popover__head mk-label-mono">
+      <div className="popover__head mk-label">
         <span>Speed</span>
-        <span>Pitch kept</span>
+        <span>Same pitch</span>
       </div>
       <output className="popover__value mk-heading-xl">{speed.toFixed(2)}×</output>
       <SpeedSlider speed={speed} onChange={onChange} />
@@ -581,15 +586,15 @@ function SpeedPopover({ speed, onChange }: { speed: number; onChange: (s: number
 }
 
 const SOUND_OPTIONS: { value: Sound; title: string; hint: string; disabled?: boolean }[] = [
-  { value: 'voice', title: 'Voice counts', hint: 'Spoken 1–8, music off' },
-  { value: 'music+voice', title: 'Music + voice', hint: 'Counts spoken over the track' },
-  { value: 'music', title: 'Music only', hint: 'Just the track' },
+  { value: 'voice', title: 'Counts only', hint: 'Counts out loud, no music' },
+  { value: 'music+voice', title: 'Music + counts', hint: 'Counts over the music' },
+  { value: 'music', title: 'Music only', hint: 'Just the music' },
 ]
 
 function SoundPopover({ sound, onChange }: { sound: Sound; onChange: (s: Sound) => void }) {
   return (
     <>
-      <div className="popover__head mk-label-mono">
+      <div className="popover__head mk-label">
         <span>Sound</span>
       </div>
       {SOUND_OPTIONS.map((o) => (
@@ -602,7 +607,7 @@ function SoundPopover({ sound, onChange }: { sound: Sound; onChange: (s: Sound) 
           disabled={o.disabled}
           onClick={() => onChange(o.value)}
         >
-          <span className="sound-option__radio">{sound === o.value && <Icon name="check" size={14} />}</span>
+          <span className="sound-option__radio">{sound === o.value && <Icon name="check" size={20} />}</span>
           <span className="sound-option__text">
             <span className="mk-body-strong">{o.title}</span>
             <span className="mk-body-small">{o.hint}</span>

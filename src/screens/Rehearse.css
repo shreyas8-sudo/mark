@@ -51,7 +51,7 @@
   gap: 14px;
   padding: 20px 20px max(env(safe-area-inset-bottom), 24px);
   border-radius: var(--mk-radius-xl) var(--mk-radius-xl) 0 0;
-  background: rgba(20, 20, 23, 0.78);
+  background: var(--mk-bg-raised);
 }
 
 @media (min-width: 768px), (orientation: landscape) {
@@ -109,6 +109,13 @@
 
 .rehearse-setup__sheet .bar-strip {
   --strip-h: 40px;
+}
+
+/* Cards and loop rows. Inside the raised setup sheet they sit a step
+   darker, so they still read as cards. */
+.rehearse-setup__sheet .rehearse-card,
+.rehearse-setup__sheet .loop-row {
+  background: var(--mk-bg-surface);
 }
 
 /* Cards and loop rows */
@@ -253,6 +260,8 @@
 
 .loop-sheet__speed-head output {
   color: var(--mk-accent-soft);
+  font-family: var(--mk-font-mono); /* a speed: numbers are Geist Mono */
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 

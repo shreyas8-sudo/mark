@@ -146,15 +146,15 @@ export function SetupFrame({ src, initial, onBack, onSave }: Props) {
       </div>
 
       <header className="setup__top">
-        <GlassButton icon="back" label="Back" iconSize={20} onClick={onBack} />
+        <GlassButton icon="back" label="Back" onClick={onBack} />
         <span className="mk-body-strong">Set up</span>
-        <span className="setup__hint mk-label-mono">Pinch · Drag</span>
+        <span className="setup__hint mk-label">Pinch · Drag</span>
       </header>
 
       <section className="setup__sheet">
-        <h1 className="mk-heading-m">Is this the right frame?</h1>
+        <h1 className="mk-heading-m">Frame your dancer</h1>
         <p className="mk-body-small">
-          Zoom in on the dancer or group you’re learning from. You can change it anytime.
+          Zoom in on who you’re learning from. You can change it later.
         </p>
         <Segmented
           label="Frame shape"
@@ -166,7 +166,7 @@ export function SetupFrame({ src, initial, onBack, onSave }: Props) {
           onChange={switchOrientation}
         />
         <div className="setup__row">
-          <Icon name="mirror" size={22} />
+          <Icon name="mirror" size={24} />
           <span className="mk-body-strong">Mirror video</span>
           <Toggle label="Mirror video" on={mirror} onChange={setMirror} />
         </div>

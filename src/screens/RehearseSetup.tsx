@@ -1,16 +1,25 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Ambient } from '../components/Ambient'
 import { BarStrip } from '../components/BarStrip'
+import { CoachMarks, type CoachMark } from '../components/CoachMarks'
 import { Button, GlassButton, ModeCarousel, Toggle } from '../components/controls'
 import { Icon } from '../components/Icon'
 import { VideoStage } from '../components/VideoStage'
 import { usePeaks } from '../hooks/usePeaks'
 import { barStart } from '../lib/beat'
+import { coachMarksDone } from '../lib/coachMarks'
 import { formatSpeed, SPEED_MAX, SPEED_MIN } from '../lib/speed'
 import type { Dance, Loop } from '../types'
 import './Rehearse.css'
 
 type Run = Dance['run']
+
+// First visit to Rehearse only.
+const COACH_MARKS: CoachMark[] = [
+  { target: 'run-bars', text: 'Rehearse runs what you’ve learned' },
+  { target: 'count-in', text: '5-6-7-8 gives you time to get in place' },
+  { target: 'loops', text: 'Each loop gets a little faster' },
+]
 
 type Props = {
   dance: Dance
@@ -29,6 +38,7 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
   const [sheet, setSheet] = useState<{ index: number | null } | null>(null) // null index = add
   const range = `Bars ${run.barStart} → ${run.barEnd}`
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [coaching, setCoaching] = useState(() => !coachMarksDone('rehearse'))
 
   // Narrow windows dock the sheet at the bottom; the video then gets the
   // space above it. Wide ones dock it on the right (all CSS).
@@ -72,11 +82,11 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
         <span className="rehearse-setup__spacer" />
       </header>
 
-      <section ref={sheetRef} className="rehearse-setup__sheet mk-glass">
-        <h1 className="mk-heading-m">Set up your run</h1>
+      <section ref={sheetRef} className="rehearse-setup__sheet">
+        <h1 className="mk-heading-m">Your run</h1>
 
-        <div className="rehearse-setup__group">
-          <div className="rehearse-setup__label mk-label-mono">
+        <div className="rehearse-setup__group" data-coach="run-bars">
+          <div className="rehearse-setup__label mk-label">
             <span>Bars</span>
             <span className="rehearse-setup__hint">Drag the ends</span>
           </div>
@@ -91,32 +101,32 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
           />
         </div>
 
-        <div className="rehearse-card">
+        <div className="rehearse-card" data-coach="count-in">
           <div className="rehearse-card__text">
             <span className="mk-body-strong">Count-in</span>
-            <span className="mk-body-small">5, 6, 7, 8 before every loop</span>
+            <span className="mk-body-small">5-6-7-8 before each loop</span>
           </div>
           <Toggle label="Count-in" on={run.countIn} onChange={(countIn) => onChange({ ...run, countIn })} />
         </div>
 
         <div className="rehearse-card">
           <div className="rehearse-card__text">
-            <span className="mk-body-strong">Spoken counts</span>
-            <span className="mk-body-small">Voice says 1–8 over the music</span>
+            <span className="mk-body-strong">Counts out loud</span>
+            <span className="mk-body-small">Over the music</span>
           </div>
-          <Toggle label="Spoken counts" on={!!run.voice} onChange={(voice) => onChange({ ...run, voice })} />
+          <Toggle label="Counts out loud" on={!!run.voice} onChange={(voice) => onChange({ ...run, voice })} />
         </div>
 
-        <div className="rehearse-setup__group">
-          <span className="rehearse-setup__label mk-label-mono">Loops</span>
+        <div className="rehearse-setup__group" data-coach="loops">
+          <span className="rehearse-setup__label mk-label">Loops</span>
           {run.loops.map((loop, i) => (
             <div key={i} className="loop-row">
               <span className="loop-row__index mk-data-mono">{String(i + 1).padStart(2, '0')}</span>
-              <span className="loop-row__speed mk-body-strong">{formatSpeed(loop.speed)}</span>
+              <span className="loop-row__speed mk-data-mono">{formatSpeed(loop.speed)}</span>
               {loop.plays > 1 && <span className="loop-row__plays mk-data-mono">× {loop.plays}</span>}
               <button
                 type="button"
-                className="loop-row__edit mk-label-mono"
+                className="loop-row__edit mk-label"
                 aria-label={`Edit loop ${i + 1}`}
                 onClick={() => setSheet({ index: i })}
               >
@@ -128,20 +138,22 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
                 aria-label={`Delete loop ${i + 1}`}
                 onClick={() => setLoops(run.loops.filter((_, j) => j !== i))}
               >
-                <Icon name="trash" size={18} />
+                <Icon name="trash" size={20} />
               </button>
             </div>
           ))}
           <button type="button" className="rehearse-setup__add mk-body-strong" onClick={() => setSheet({ index: null })}>
-            <Icon name="add" size={18} />
+            <Icon name="add" size={20} />
             Add loop
           </button>
         </div>
 
         <Button className="rehearse-setup__start" disabled={!run.loops.length} onClick={onStart}>
-          Start rehearsing
+          Let’s run it
         </Button>
       </section>
+
+      {coaching && <CoachMarks mode="rehearse" marks={COACH_MARKS} onDone={() => setCoaching(false)} />}
 
       {sheet && (
         <LoopSheet
@@ -197,7 +209,7 @@ function LoopSheet({
 
         <div className="loop-sheet__speed">
           <div className="loop-sheet__speed-head">
-            <span className="mk-label-mono">Speed</span>
+            <span className="mk-label">Speed</span>
             <output className="mk-heading-l">{formatSpeed(speed)}</output>
           </div>
           <input
@@ -228,9 +240,9 @@ function LoopSheet({
 
         <div className="rehearse-card rehearse-card--sunken">
           <div className="rehearse-card__text">
-            <span className="mk-body-strong">Plays</span>
+            <span className="mk-body-strong">Times</span>
             {/* Manrope has no arrow glyph (Geist Mono does), so say it in words here. */}
-            <span className="mk-body-small">Times through {range.toLowerCase().replace('→', 'to')}</span>
+            <span className="mk-body-small">Run {range.toLowerCase().replace('→', 'to')} this many times</span>
           </div>
           <button
             type="button"

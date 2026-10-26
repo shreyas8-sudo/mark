@@ -23,7 +23,7 @@ type Mark = 1 | 8
 type Props = {
   dance: Dance
   src: string
-  audio?: AudioBuffer // already decoded when coming from Getting it ready
+  audio?: AudioBuffer // already decoded when coming from Reading the beat
   /** Beat detection failed, rather than the dancer asking to fix the counts. */
   noBeat?: boolean
   step?: string
@@ -34,7 +34,7 @@ type Props = {
 /**
  * Setup · Set your counts: the dancer marks count 1 and count 8 of one bar
  * on the waveform, previewing each; tempo and bars follow from those two.
- * Used when beat detection fails, and from "Fix counts".
+ * Used when beat detection fails, and from "Redo counts".
  */
 export function SetCounts({ dance, src, audio: given, noBeat, step, onBack, onSave }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -215,14 +215,14 @@ export function SetCounts({ dance, src, audio: given, noBeat, step, onBack, onSa
           }}
         />
         <header className="first-beat__top">
-          <GlassButton icon="back" label="Back" iconSize={20} onClick={onBack} />
+          <GlassButton icon="back" label="Back" onClick={onBack} />
           <span className="mk-body-strong mk-over-video">Set up</span>
-          {step && <span className="first-beat__step mk-label-mono mk-over-video">{step}</span>}
+          {step && <span className="first-beat__step mk-label mk-over-video">{step}</span>}
         </header>
       </div>
 
       <section className="first-beat__sheet">
-        <h1 className="mk-heading-m">{noBeat ? 'Couldn’t find the beat. Set your counts' : 'Set your counts'}</h1>
+        <h1 className="mk-heading-m">{noBeat ? 'Couldn’t hear a beat. Mark your counts' : 'Mark your counts'}</h1>
         <p className="mk-body-small">
           Mark where count 1 lands, then count 8 of the same bar. Preview each to hear it on the beat.
         </p>
@@ -238,7 +238,7 @@ export function SetCounts({ dance, src, audio: given, noBeat, step, onBack, onSa
         />
 
         <div className="set-counts__wave-row">
-          <GlassButton icon="back" label="Earlier in the song" size={36} iconSize={16} disabled={winStart <= 0} onClick={() => pan(-1)} />
+          <GlassButton icon="back" label="Earlier in the song" size={36} disabled={winStart <= 0} onClick={() => pan(-1)} />
           <div
             ref={areaRef}
             className="beat-wave set-counts__wave"
@@ -261,7 +261,7 @@ export function SetCounts({ dance, src, audio: given, noBeat, step, onBack, onSa
             {peaks ? (
               <Waveform peaks={peaks} className="beat-wave__canvas" />
             ) : (
-              <span className="beat-wave__loading mk-label-mono">{noAudio ? 'No audio found · mark from the video' : 'Reading the audio…'}</span>
+              <span className="beat-wave__loading mk-label">{noAudio ? 'No sound. Mark it from the video' : 'Listening…'}</span>
             )}
             {ticks.filter((tk) => inWindow(tk.time)).map((tk) => (
               <span key={tk.n} className="beat-wave__tick" style={{ left: `${x(tk.time)}%` }}>
@@ -280,7 +280,7 @@ export function SetCounts({ dance, src, audio: given, noBeat, step, onBack, onSa
             })}
             {showPlayhead && <span className="beat-wave__playhead" style={{ left: `${x(t)}%` }} />}
           </div>
-          <GlassButton icon="back" flip label="Later in the song" size={36} iconSize={16} disabled={winEnd >= dance.duration} onClick={() => pan(1)} />
+          <GlassButton icon="back" flip label="Later in the song" size={36} disabled={winEnd >= dance.duration} onClick={() => pan(1)} />
         </div>
 
         <div className="first-beat__controls">
@@ -292,8 +292,8 @@ export function SetCounts({ dance, src, audio: given, noBeat, step, onBack, onSa
               disabled={(m === 1 ? t1 : t8) == null}
               onClick={() => preview(m)}
             >
-              <Icon name={previewing?.mark === m ? 'pause' : 'play'} size={18} />
-              {previewing?.mark === m ? 'Stop' : `Preview ${m}`}
+              <Icon name={previewing?.mark === m ? 'pause' : 'play'} size={20} />
+              {previewing?.mark === m ? 'Stop' : `Play ${m}`}
             </Button>
           ))}
           <span className="first-beat__bpm mk-label-mono" aria-live="polite">
@@ -315,7 +315,7 @@ export function SetCounts({ dance, src, audio: given, noBeat, step, onBack, onSa
             Clear
           </Button>
           <Button disabled={!grid} onClick={() => grid && onSave({ bpm: Math.round(grid.bpm * 100) / 100, offset: Math.round(grid.offset * 1000) / 1000 })}>
-            Use these counts
+            Lock it in
           </Button>
         </div>
       </section>

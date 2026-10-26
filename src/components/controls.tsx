@@ -1,9 +1,15 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
-import { Icon, type IconName } from './Icon'
+import { Icon, type IconName, type IconSize } from './Icon'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement>
 
-/** Round glass button (back, more, transport). */
+/** Icon size for a round button of `size` px, on the 20 / 24 / 28 scale. */
+const iconFor = (size: number): IconSize => (size >= 56 ? 28 : size >= 44 ? 24 : 20)
+
+/**
+ * Round button (back, more, transport). Glass over video; `solid` on a
+ * plain background. `on` fills the icon (Loop on, Mirror on).
+ */
 export function GlassButton({
   icon,
   glyph,
@@ -11,18 +17,29 @@ export function GlassButton({
   size = 40,
   iconSize,
   flip,
+  on,
+  solid,
   className = '',
   ...rest
-}: { icon?: IconName; glyph?: ReactNode; label: string; size?: number; iconSize?: number; flip?: boolean } & ButtonProps) {
+}: {
+  icon?: IconName
+  glyph?: ReactNode
+  label: string
+  size?: number
+  iconSize?: IconSize
+  flip?: boolean
+  on?: boolean
+  solid?: boolean
+} & ButtonProps) {
   return (
     <button
       type="button"
       aria-label={label}
-      className={`glass-btn mk-glass ${className}`}
+      className={`glass-btn ${solid ? 'glass-btn--solid' : 'mk-glass'} ${className}`}
       style={{ width: size, height: size }}
       {...rest}
     >
-      {icon ? <Icon name={icon} size={iconSize ?? Math.round(size * 0.48)} flip={flip} /> : <span className="glyph mk-label-mono">{glyph}</span>}
+      {icon ? <Icon name={icon} size={iconSize ?? iconFor(size)} flip={flip} on={on} /> : <span className="glyph mk-data-mono">{glyph}</span>}
     </button>
   )
 }
@@ -33,7 +50,7 @@ export function PlayShutter({
   iconSize = 24,
   className = '',
   ...rest
-}: { playing: boolean; iconSize?: number } & ButtonProps) {
+}: { playing: boolean; iconSize?: IconSize } & ButtonProps) {
   return (
     <button
       type="button"
@@ -46,7 +63,7 @@ export function PlayShutter({
   )
 }
 
-/** LEARN · REHEARSE switch at the top of the player. */
+/** Learn · Rehearse switch at the top of the player. */
 export function ModeCarousel({
   mode,
   onChange,
@@ -66,7 +83,7 @@ export function ModeCarousel({
           disabled={!onChange && mode !== m}
           onClick={() => onChange?.(m)}
         >
-          {m}
+          {m === 'learn' ? 'Learn' : 'Rehearse'}
         </button>
       ))}
     </div>
@@ -143,8 +160,8 @@ export function DeskTopBar({
 }) {
   return (
     <header className="desk-top">
-      <button type="button" className="desk-top__back mk-glass mk-body-strong" onClick={onBack}>
-        <Icon name="back" size={18} />
+      <button type="button" className="desk-top__back mk-body-strong" onClick={onBack}>
+        <Icon name="back" size={20} />
         Library
       </button>
       <div className="desk-top__title">
@@ -160,19 +177,19 @@ export function DeskTopBar({
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
-  return <kbd className="mk-kbd mk-label-mono">{children}</kbd>
+  return <kbd className="mk-kbd mk-label">{children}</kbd>
 }
 
 /** The `?` keyboard-shortcuts popover on laptop layouts. */
 export function ShortcutsButton({ keys, open, onToggle }: { keys: [string, string][]; open: boolean; onToggle: () => void }) {
   return (
     <div className="shortcuts">
-      <button type="button" className="shortcuts__btn mk-glass mk-body-strong" aria-label="Keyboard shortcuts" aria-expanded={open} onClick={onToggle}>
+      <button type="button" className="shortcuts__btn mk-body-strong" aria-label="Keyboard shortcuts" aria-expanded={open} onClick={onToggle}>
         ?
       </button>
       {open && (
         <div className="shortcuts__pop popover" role="dialog" aria-label="Keyboard shortcuts">
-          <span className="popover__head mk-label-mono">Keyboard</span>
+          <span className="popover__head mk-label">Keyboard</span>
           {keys.map(([k, what]) => (
             <p key={k}>
               <Kbd>{k}</Kbd> {what}

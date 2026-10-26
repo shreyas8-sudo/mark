@@ -38,6 +38,12 @@
   margin: 0;
 }
 
+/* An icon inside a tip (e.g. the Got it check) sits on the text line. */
+.coach__bubble p .mk-icon {
+  display: inline-block;
+  vertical-align: -4px;
+}
+
 .coach__step {
   color: var(--mk-accent-soft);
 }

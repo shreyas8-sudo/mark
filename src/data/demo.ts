@@ -16,7 +16,7 @@ export const DEMO: Dance = {
   bars: barCount(grid.duration, grid),
   mirror: true,
   crop: FULL_FRAME,
-  videoSize: { w: 540, h: 1172 },
+  videoSize: { w: 568, h: 840 },
   orientation: 'vertical',
   speed: 0.5,
   sound: 'voice',

@@ -55,7 +55,7 @@ export function Library({ dances, onOpen, onAdd, onRename, onChangeFrame, onChan
       <header className="library__head">
         <h1 className="mk-heading-l">Your dances</h1>
         <button type="button" className="library__add" aria-label="Add a dance" onClick={pick}>
-          <Icon name="add" size={22} />
+          <Icon name="add" size={24} />
         </button>
         <input
           ref={input}
@@ -77,16 +77,16 @@ export function Library({ dances, onOpen, onAdd, onRename, onChangeFrame, onChan
               <Icon name="add" size={28} />
             </span>
             <span className="mk-heading-m">Add your first dance</span>
-            <span className="mk-body-small">Pick a video from your phone, or drop one here. It never leaves your device.</span>
+            <span className="mk-body-small">Pick a video or drop one here. It stays on your device.</span>
           </button>
           <Button variant="secondary" onClick={onRestoreDemo}>
-            Try the demo clip
+            Try the demo
           </Button>
         </div>
       ) : (
         <>
-          <p className="library__meta mk-label-mono">
-            {dances.length} {dances.length === 1 ? 'dance' : 'dances'} · Saved on this device
+          <p className="library__meta mk-label">
+            {dances.length} {dances.length === 1 ? 'dance' : 'dances'} · On this device
           </p>
           <ul className="library__grid">
             {dances.map((d) => (
@@ -187,9 +187,9 @@ function DanceCard({ dance: d, menuOpen, renaming, onOpen, onMenu, onCloseMenu, 
       <button type="button" className="dance-card__thumb" aria-label={`Open ${d.name}`} onClick={onOpen}>
         {thumb && <img src={thumb} alt="" style={thumbStyle} />}
       </button>
-      {d.id === DEMO.id && <span className="dance-card__tag mk-glass mk-label-mono">Demo</span>}
+      {d.id === DEMO.id && <span className="dance-card__tag mk-glass mk-label">Demo</span>}
       <button type="button" className="dance-card__more mk-glass" aria-label={`Options for ${d.name}`} aria-expanded={menuOpen} onClick={toggleMenu}>
-        <Icon name="more" size={16} />
+        <Icon name="more" size={20} />
       </button>
 
       {renaming ? (
@@ -216,10 +216,10 @@ function DanceCard({ dance: d, menuOpen, renaming, onOpen, onMenu, onCloseMenu, 
             Rename <Icon name="edit" size={20} />
           </button>
           <button type="button" role="menuitem" className="mk-body-strong" onClick={onChangeFirstBeat}>
-            Change first beat <Icon name="sound" size={20} />
+            Move the 1 <Icon name="sound" size={20} />
           </button>
           <button type="button" role="menuitem" className="mk-body-strong" onClick={onFixCounts}>
-            Fix counts <Icon name="edit" size={20} />
+            Redo counts <Icon name="restart" size={20} />
           </button>
           <button type="button" role="menuitem" className="mk-body-strong" onClick={onChangeFrame}>
             Change frame <Icon name="frame" size={20} />

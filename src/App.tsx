@@ -14,8 +14,8 @@ import { SetCounts } from './screens/SetCounts'
 import { SetupFrame } from './screens/SetupFrame'
 import type { Dance } from './types'
 
-// Library → Getting it ready → Setup · First beat → Setup · Frame → Learn.
-// With no beat found, Set your counts (1 and 8 by hand) replaces First beat;
+// Library → Reading the beat → Setup · First beat → Setup · Frame → Learn.
+// With no beat found, Mark your counts (1 and 8 by hand) replaces First beat;
 // First beat can also hand over to it when the counts are wrong.
 // Setup runs once per dance; after that a dance opens straight into Learn
 // (Frame and the library's ⋯ menu re-open the setup steps).

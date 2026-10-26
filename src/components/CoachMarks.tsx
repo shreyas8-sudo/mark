@@ -1,8 +1,8 @@
-import { useLayoutEffect, useState } from 'react'
-import { markCoachMarksDone } from '../lib/coachMarks'
+import { useLayoutEffect, useState, type ReactNode } from 'react'
+import { markCoachMarksDone, type CoachMode } from '../lib/coachMarks'
 import './CoachMarks.css'
 
-export type CoachMark = { target: string; text: string }
+export type CoachMark = { target: string; text: ReactNode }
 
 type Rect = { left: number; top: number; width: number; height: number }
 
@@ -19,15 +19,18 @@ const PAD = 6
 const BUBBLE_W = 260
 
 /**
- * First-visit coach marks: a spotlight on each target in turn with a short
- * tip, Next / Done, and Skip. Finishing or skipping is remembered.
+ * First-visit coach marks for one mode: a spotlight on each target in turn
+ * with a short tip, Next / Done, and Skip. Finishing marks this mode done;
+ * Skip turns the tips off for both modes.
  */
-export function CoachMarks({ marks, onDone }: { marks: CoachMark[]; onDone: () => void }) {
+export function CoachMarks({ mode, marks, onDone }: { mode: CoachMode; marks: CoachMark[]; onDone: () => void }) {
   const [index, setIndex] = useState(0)
   const [rect, setRect] = useState<Rect | null>(null)
   const mark = marks[index]
 
   useLayoutEffect(() => {
+    // Targets inside a scrolling sheet (Rehearse) may start out of view.
+    document.querySelector(`[data-coach="${mark.target}"]`)?.scrollIntoView({ block: 'nearest' })
     const update = () => setRect(findTarget(mark.target))
     update()
     window.addEventListener('resize', update)
@@ -39,11 +42,11 @@ export function CoachMarks({ marks, onDone }: { marks: CoachMark[]; onDone: () =
     }
   }, [mark.target])
 
-  const finish = () => {
-    markCoachMarksDone()
+  const finish = (modes: CoachMode[]) => {
+    markCoachMarksDone(...modes)
     onDone()
   }
-  const next = () => (index + 1 < marks.length ? setIndex(index + 1) : finish())
+  const next = () => (index + 1 < marks.length ? setIndex(index + 1) : finish([mode]))
 
   // Spotlight around the target; the tip sits above it (targets are low on
   // screen) or below if there's no room, kept inside the viewport.
@@ -64,16 +67,16 @@ export function CoachMarks({ marks, onDone }: { marks: CoachMark[]; onDone: () =
     : { left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }
 
   return (
-    <div className="coach" role="dialog" aria-modal aria-label="Getting started" data-mode="learn">
+    <div className="coach" role="dialog" aria-modal aria-label="Getting started" data-mode={mode}>
       <button type="button" className="coach__scrim" aria-label="Next tip" onClick={next} />
       {spot && <div className="coach__spot" style={spot} />}
       <div className="coach__bubble" style={{ ...bubbleStyle, width: BUBBLE_W }} data-above={above || undefined}>
-        <span className="coach__step mk-label-mono">
+        <span className="coach__step mk-label">
           {index + 1} of {marks.length}
         </span>
         <p className="mk-body-strong">{mark.text}</p>
         <div className="coach__actions">
-          <button type="button" className="coach__skip mk-body-small" onClick={finish}>
+          <button type="button" className="coach__skip mk-body-small" onClick={() => finish(['learn', 'rehearse'])}>
             Skip
           </button>
           <button type="button" className="coach__next mk-button mk-button--primary mk-body-strong" onClick={next}>

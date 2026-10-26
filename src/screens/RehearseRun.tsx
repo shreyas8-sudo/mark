@@ -228,20 +228,20 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
       {state.phase === 'done' && (
         <div className="run-done">
           <p className="mk-heading-l">Nice run.</p>
-          <Button onClick={restart}>Run it again</Button>
+          <Button onClick={restart}>One more time</Button>
         </div>
       )}
 
       {/* One glass pill: Prev loop · Restart · Play/Pause · Next loop · End */}
       <footer ref={dockRef} className="rehearse-run__bottom">
         <nav className="run-dock mk-glass" aria-label="Transport">
-          <GlassButton icon="prev" label="Previous loop" size={44} iconSize={18} onClick={prev} />
-          <GlassButton icon="restart" label="Restart loop" size={44} iconSize={20} onClick={restart} />
+          <GlassButton icon="prev" label="Previous loop" size={44} onClick={prev} />
+          <GlassButton icon="restart" label="Restart loop" size={44} onClick={restart} />
           <PlayShutter playing={playing} onClick={togglePlay} />
-          <GlassButton icon="next" label="Next loop" size={44} iconSize={18} onClick={next} />
-          <button type="button" className="run-dock__end mk-body-strong" aria-label="End rehearsal" onClick={onEnd}>
-            <Icon name="close" size={18} />
-            End<span className="run-dock__end-long">&nbsp;rehearsal</span>
+          <GlassButton icon="next" label="Next loop" size={44} onClick={next} />
+          <button type="button" className="run-dock__end mk-body-strong" aria-label="End run" onClick={onEnd}>
+            <Icon name="close" size={20} />
+            End<span className="run-dock__end-long">&nbsp;run</span>
           </button>
         </nav>
       </footer>
@@ -253,6 +253,6 @@ const SHORTCUTS: [string, string][] = [
   ['Space', 'Pause / play'],
   ['R', 'Restart loop'],
   ['[ ]', 'Prev / next loop'],
-  ['Esc', 'End rehearsal'],
+  ['Esc', 'End run'],
   ['?', 'Show shortcuts'],
 ]
