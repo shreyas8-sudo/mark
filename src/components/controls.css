@@ -108,6 +108,40 @@ button:focus-visible {
   object-fit: fill;
 }
 
+/* ---- L / R at the sides of the picture ---- */
+.video-stage__sides {
+  position: absolute;
+  pointer-events: none;
+}
+
+.side-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Low on each side, clear of the count (top left) and the tool column
+   (centre right); screens with controls over the bottom raise it. */
+.side-labels__label {
+  position: absolute;
+  bottom: var(--sides-bottom, 12px);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--mk-radius-sm);
+  font: 500 13px/1 var(--mk-font-mono);
+  color: var(--mk-text-primary);
+}
+
+.side-labels__label--left {
+  left: var(--sides-inset-left, 12px);
+}
+
+.side-labels__label--right {
+  right: var(--sides-inset-right, 12px);
+}
+
 /* ---- Button ---- */
 .mk-button {
   display: flex;

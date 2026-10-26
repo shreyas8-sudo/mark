@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type Ref } from 'react'
 import { useVideoRef } from '../hooks/useVideoRef'
 import { videoBox, type Crop, type Fit, type Size } from '../lib/crop'
+import { SideLabels } from './SideLabels'
 
 type Props = {
   src: string
@@ -10,12 +11,14 @@ type Props = {
   fit?: Fit
   /** The clip's pixel size if already known, so the crop applies at once. */
   videoSize?: Size
+  /** Show L / R at the sides of the picture (swapping with `mirror`). */
+  sides?: boolean
   /** Tap on the video itself (not on controls floating over it). */
   onTap?: () => void
   onLoadedMetadata?: (video: HTMLVideoElement) => void
 }
 
-export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', videoSize, onTap, onLoadedMetadata }: Props) {
+export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', videoSize, sides, onTap, onLoadedMetadata }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const ref = useVideoRef(src, videoRef)
   const [stage, setStage] = useState<Size | null>(null)
@@ -38,6 +41,16 @@ export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', videoSiz
   }, [])
 
   const box = stage && video ? videoBox(stage, video, crop, mirror, fit) : null
+  // The part of the picture actually on screen, for the L / R labels.
+  const shown =
+    box && stage
+      ? {
+          left: Math.max(0, box.left),
+          top: Math.max(0, box.top),
+          width: Math.min(stage.w, box.left + box.width) - Math.max(0, box.left),
+          height: Math.min(stage.h, box.top + box.height) - Math.max(0, box.top),
+        }
+      : { left: 0, top: 0, width: '100%', height: '100%' }
 
   return (
     // The tap is a convenience; Play/Pause stays a visible, labelled button.
@@ -73,6 +86,11 @@ export function VideoStage({ src, mirror, crop, videoRef, fit = 'auto', videoSiz
           if (v.currentTime === 0) v.currentTime = 0.001
         }}
       />
+      {sides && (
+        <div className="video-stage__sides" style={shown}>
+          <SideLabels mirror={mirror} />
+        </div>
+      )}
     </div>
   )
 }

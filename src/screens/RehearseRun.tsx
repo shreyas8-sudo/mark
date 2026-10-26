@@ -181,6 +181,7 @@ export function RehearseRun({ dance, src, onEnd, onBack, onLearn }: Props) {
         <VideoStage
           src={src}
           mirror={dance.mirror}
+          sides
           crop={dance.crop}
           videoSize={dance.videoSize}
           fit="contain"

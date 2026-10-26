@@ -435,6 +435,7 @@ export function Learn({ dance, src, onBack, onEditFrame, onRehearse, onChange, o
         <VideoStage
           src={src}
           mirror={dance.mirror}
+          sides
           crop={dance.crop}
           videoSize={videoSize}
           fit="contain"

@@ -472,3 +472,18 @@
     animation: none;
   }
 }
+
+/* ---- L / R: above the transport bar, and clear of the tool column where
+   it sits over the video ---- */
+.learn {
+  --sides-bottom: 84px;
+}
+
+.learn:not([data-layout='desktop']),
+.learn[data-wide] {
+  --sides-inset-right: 64px;
+}
+
+.learn[data-wide][data-layout='desktop'] {
+  --sides-inset-right: 76px;
+}

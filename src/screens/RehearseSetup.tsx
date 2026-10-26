@@ -66,6 +66,7 @@ export function RehearseSetup({ dance, src, onBack, onLearn, onChange, onStart }
         <VideoStage
           src={src}
           mirror={dance.mirror}
+          sides
           crop={dance.crop}
           videoSize={dance.videoSize}
           fit="contain"

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type PointerEvent, type WheelEvent } from 'react'
 import { Button, GlassButton, Toggle } from '../components/controls'
 import { Icon } from '../components/Icon'
+import { SideLabels } from '../components/SideLabels'
 import { useVideoRef } from '../hooks/useVideoRef'
 import cornerBl from '../assets/crop/corner-bl.svg'
 import cornerBr from '../assets/crop/corner-br.svg'
@@ -145,6 +146,7 @@ export function SetupFrame({ src, initial, onBack, onSave }: Props) {
             <img src={cornerTr} alt="" width={26} height={26} className="setup__corner setup__corner--tr" />
             <img src={cornerBr} alt="" width={26} height={26} className="setup__corner setup__corner--br" />
             <img src={cornerBl} alt="" width={26} height={26} className="setup__corner setup__corner--bl" />
+            <SideLabels mirror={mirror} />
           </div>
         )}
       </div>
